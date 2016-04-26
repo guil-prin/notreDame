@@ -1,0 +1,4 @@
+cgal_create_CMakeLists -s executable 
+cmake -DCGAL_DIR=$HOME/CGAL-4.8 . 
+make
+./executable
