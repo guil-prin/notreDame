@@ -9,10 +9,7 @@
 #include<CGAL/IO/Polyhedron_iostream.h>
 
 #include <CGAL/IO/print_wavefront.h>
- 
-typedef CGAL::Simple_cartesian<double>     Kernel;
-typedef CGAL::Polyhedron_3<Kernel>         Polyhedron;
-typedef Polyhedron::HalfedgeDS             HalfedgeDS;
+#include "Loader.hpp"
  
 // A modifier creating a triangle with the incremental builder.
 template<class HDS>
@@ -47,11 +44,37 @@ public:
 		B.end_surface();
 	}
 };
+
+ObjToPolyhedron::ObjToPolyhedron(char const *input, char const *output) {
+	
+	this->output = output;
+	// load the input file
+	load_obj( input, coords, faces );
+	std::cout << "objet chargé" << std::endl;
+  
+ // build a polyhedron from the loaded arrays
+
+	polyhedron_builder<HalfedgeDS> builder( coords, faces );
+	P.delegate( builder );
+}
+
+void ObjToPolyhedron::exportObj() {
+	std::ofstream ofs(output);
+	CGAL::print_polyhedron_wavefront(ofs, P);
+	ofs.close();
+	std::cout << "objet exporté" << std::endl;
+	
+	/* EXPORT OFF
+	// write the polyhedron out as a .OFF file
+	std::ofstream os("dump.off");
+	os << P;
+	os.close();*/
+}
  
 // reads the first integer from a string in the form
 // "334/455/234" by stripping forward slashes and
 // scanning the result
-int get_first_integer( const char *v ){
+int ObjToPolyhedron::get_first_integer( const char *v ){
 	 int ival;
 	 std::string s( v );
 	 std::replace( s.begin(), s.end(), '/', ' ' );
@@ -62,7 +85,7 @@ int get_first_integer( const char *v ){
 // barebones .OFF file reader, throws away texture coordinates, normals, etc.
 // stores results in input coords array, packed [x0,y0,z0,x1,y1,z1,...] and
 // faces array packed [T0a,T0b,T0c,T1a,T1b,T1c,...]
-void load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces ){
+void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces ){
 	double x, y, z;
 	char line[1024], v0[1024], v1[1024], v2[1024], v3[1024];
 
@@ -99,42 +122,4 @@ void load_obj( const char *filename, std::vector<double> &coords, std::vector< s
 		}
 	}
 	fclose(fp); 
-}
- 
-int main() {
-	// two vectors to hold point coordinates and
-	// triangle vertex indices
-	std::vector<double> coords;
-	std::vector< std::vector<int> >    faces;
-
-	// load the input file
-	load_obj( "mixTriQuad.obj", coords, faces );
-	if( coords.size() == 0 )
-		return 1;
-	std::cout << "objet chargé" << std::endl;
-  
- /*
-	 coords[i] += ((double) rand() / (RAND_MAX));
- */
- 
-  
- // build a polyhedron from the loaded arrays
-
-	Polyhedron P;
-	polyhedron_builder<HalfedgeDS> builder( coords, faces );
-	P.delegate( builder );
-  
-	// EXPORT OBJ
-	std::ofstream ofs("export.obj");
-	CGAL::print_polyhedron_wavefront(ofs, P);
-	ofs.close();
-	std::cout << "objet exporté" << std::endl;
-	
-/* EXPORT OFF
-// write the polyhedron out as a .OFF file
-std::ofstream os("dump.off");
-os << P;
-os.close();*/
-  
-    return 0;
 }
