@@ -10,6 +10,8 @@
 
 #include <CGAL/IO/print_wavefront.h>
 #include "Loader.hpp"
+
+#include "TypeDefs.hpp"
  
 // A modifier creating a triangle with the incremental builder.
 template<class HDS>
@@ -50,12 +52,17 @@ ObjToPolyhedron::ObjToPolyhedron(char const *input, char const *output) {
 	this->output = output;
 	// load the input file
 	load_obj( input, coords, faces );
-	std::cout << "objet chargé" << std::endl;
-  
- // build a polyhedron from the loaded arrays
+	if( coords.size() == 0 ) {
+		std::cout << "Aucun objet n'a été chargé" << std::endl;
+	}
+	else {
+		std::cout << "objet chargé" << std::endl;
+	  
+	 // build a polyhedron from the loaded arrays
 
-	polyhedron_builder<HalfedgeDS> builder( coords, faces );
-	P.delegate( builder );
+		polyhedron_builder<HalfedgeDS> builder( coords, faces );
+		P.delegate( builder );
+	}
 }
 
 void ObjToPolyhedron::exportObj() {
@@ -122,4 +129,8 @@ void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coord
 		}
 	}
 	fclose(fp); 
+}
+
+Polyhedron ObjToPolyhedron::getPolyhedron() {
+	return P;
 }
