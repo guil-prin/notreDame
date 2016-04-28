@@ -26,5 +26,5 @@ class ObjToPolyhedron {
 	void load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces );
 	void exportObj();
 	Polyhedron getPolyhedron();
-	
+	void changeAllPoints();
 };

@@ -94,7 +94,7 @@ int ObjToPolyhedron::get_first_integer( const char *v ){
 // faces array packed [T0a,T0b,T0c,T1a,T1b,T1c,...]
 void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces ){
 	double x, y, z;
-	char line[1024], v0[1024], v1[1024], v2[1024], v3[1024];
+	char line[1024], v0[1024], v1[1024], v2[1024];
 
 	// open the file, return if open fails
 	FILE *fp = fopen(filename, "r" );
@@ -105,11 +105,12 @@ void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coord
 	// first character is a 'f' we are reading a facet
 	while( fgets( line, 1024, fp ) ){
 		if(line[0] == 'v' && (line[1] != 't' && line[1] != 'n')){
-		sscanf( line, "%*s%lf%lf%lf", &x, &y, &z );
-		coords.push_back( x );
-		coords.push_back( y );
-		coords.push_back( z );
-		} else if( line[0] == 'f' ){
+			sscanf( line, "%*s%lf%lf%lf", &x, &y, &z );
+			coords.push_back( x );
+			coords.push_back( y );
+			coords.push_back( z );
+		}
+		else if( line[0] == 'f' ){
 			char *token = std::strtok(line, " ");
 			std::vector<int> f;
 			while (token != NULL) {
@@ -133,4 +134,12 @@ void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coord
 
 Polyhedron ObjToPolyhedron::getPolyhedron() {
 	return P;
+}
+
+void ObjToPolyhedron::changeAllPoints() {
+	for ( Vertex_iterator v = P.vertices_begin(); v != P.vertices_end(); ++v) {
+		Point_3 p(v->point().x()+((double) rand() / (RAND_MAX)),v->point().y()+((double) rand() / (RAND_MAX)),v->point().z()+((double) rand() / (RAND_MAX)));
+        v->point() = p;
+        std::cout << v->point() << std::endl;
+	}
 }
