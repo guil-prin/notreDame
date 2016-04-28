@@ -47,7 +47,7 @@ public:
 	}
 };
 
-ObjToPolyhedron::ObjToPolyhedron(char const *input, char const *output) {
+DegradeAnObject::DegradeAnObject(char const *input, char const *output) {
 	
 	this->output = output;
 	// load the input file
@@ -65,7 +65,7 @@ ObjToPolyhedron::ObjToPolyhedron(char const *input, char const *output) {
 	}
 }
 
-void ObjToPolyhedron::exportObj() {
+void DegradeAnObject::exportObj() {
 	std::ofstream ofs(output);
 	CGAL::print_polyhedron_wavefront(ofs, P);
 	ofs.close();
@@ -81,7 +81,7 @@ void ObjToPolyhedron::exportObj() {
 // reads the first integer from a string in the form
 // "334/455/234" by stripping forward slashes and
 // scanning the result
-int ObjToPolyhedron::get_first_integer( const char *v ){
+int DegradeAnObject::get_first_integer( const char *v ){
 	 int ival;
 	 std::string s( v );
 	 std::replace( s.begin(), s.end(), '/', ' ' );
@@ -92,9 +92,9 @@ int ObjToPolyhedron::get_first_integer( const char *v ){
 // barebones .OFF file reader, throws away texture coordinates, normals, etc.
 // stores results in input coords array, packed [x0,y0,z0,x1,y1,z1,...] and
 // faces array packed [T0a,T0b,T0c,T1a,T1b,T1c,...]
-void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces ){
+void DegradeAnObject::load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces ){
 	double x, y, z;
-	char line[1024], v0[1024], v1[1024], v2[1024];
+	char line[1024], str[1024];
 
 	// open the file, return if open fails
 	FILE *fp = fopen(filename, "r" );
@@ -104,7 +104,16 @@ void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coord
 	// line is 'v', we are reading a vertex, otherwise, if the
 	// first character is a 'f' we are reading a facet
 	while( fgets( line, 1024, fp ) ){
-		if(line[0] == 'v' && (line[1] != 't' && line[1] != 'n')){
+		if(line[0] == "o") {
+			char *token = std::strtok(line, " ");
+			while (token != NULL) {
+				if(token[0] != 'o') {
+					names.push_back(token);
+				}
+				token = std::strtok(NULL, " ");
+			}
+		}
+		else if(line[0] == 'v' && (line[1] != 't' && line[1] != 'n')){
 			sscanf( line, "%*s%lf%lf%lf", &x, &y, &z );
 			coords.push_back( x );
 			coords.push_back( y );
@@ -132,11 +141,11 @@ void ObjToPolyhedron::load_obj( const char *filename, std::vector<double> &coord
 	fclose(fp); 
 }
 
-Polyhedron ObjToPolyhedron::getPolyhedron() {
+Polyhedron DegradeAnObject::getPolyhedron() {
 	return P;
 }
 
-void ObjToPolyhedron::changeAllPoints() {
+void DegradeAnObject::changeAllPoints() {
 	for ( Vertex_iterator v = P.vertices_begin(); v != P.vertices_end(); ++v) {
 		Point_3 p(v->point().x()+((double) rand() / (RAND_MAX)),v->point().y()+((double) rand() / (RAND_MAX)),v->point().z()+((double) rand() / (RAND_MAX)));
         v->point() = p;

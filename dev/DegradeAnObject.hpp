@@ -12,11 +12,12 @@
 
 #include "TypeDefs.hpp"
 
-class ObjToPolyhedron {
+class DegradeAnObject {
 	
-	Polyhedron P;
-	std::vector<double> coords;
-	std::vector< std::vector<int> >    faces;
+	std::vector<string> names;
+	std::vector<Polyhedron> polys;
+	std::vector< std::vector<double> > coords;
+	std::vector< std::vector< std::vector<int> > > faces; // for each polyhedron, for each face, each coord.
 	char const *output;
 	
 	
