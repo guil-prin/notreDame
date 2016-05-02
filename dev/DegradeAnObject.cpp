@@ -1,16 +1,16 @@
-#include<fstream>
-#include<vector>
-#include<string>
-#include<algorithm>
+#include <fstream>
+#include <vector>
+#include <string>
+#include <algorithm>
+#include <iostream>
  
-#include<CGAL/Simple_cartesian.h>
-#include<CGAL/Polyhedron_incremental_builder_3.h>
-#include<CGAL/Polyhedron_3.h>
-#include<CGAL/IO/Polyhedron_iostream.h>
-
+#include <CGAL/Simple_cartesian.h>
+#include <CGAL/Polyhedron_incremental_builder_3.h>
+#include <CGAL/Polyhedron_3.h>
+#include <CGAL/IO/Polyhedron_iostream.h>
 #include <CGAL/IO/print_wavefront.h>
-#include "Loader.hpp"
 
+#include "DegradeAnObject.hpp"
 #include "TypeDefs.hpp"
  
 // A modifier creating a triangle with the incremental builder.
@@ -19,7 +19,8 @@ class polyhedron_builder : public CGAL::Modifier_base<HDS> {
 public:
 	std::vector<double> &coords;
 	std::vector< std::vector<int> >    &faces;
-	polyhedron_builder( std::vector<double> &_coords, std::vector< std::vector<int> > &_faces ) : coords(_coords), faces(_faces) {}
+	int minFacet;
+	polyhedron_builder( std::vector<double> &_coords, std::vector< std::vector<int> > &_faces, int _minFacet ) : coords(_coords), faces(_faces), minFacet(_minFacet) {}
 	void operator()( HDS& hds) {
 		typedef typename HDS::Vertex   Vertex;
 		typedef typename Vertex::Point Point;
@@ -32,12 +33,11 @@ public:
 		for( int i=0; i<(int)coords.size(); i+=3 ){
 			B.add_vertex( Point( coords[i+0], coords[i+1], coords[i+2] ) );
 		}
-
 		// add the polyhedron faces
 		for(int i = 0 ; i < faces.size() ; i++) {
 			B.begin_facet();
 			for(int j = 0 ; j < faces[i].size() ; j++) {
-				B.add_vertex_to_facet( faces[i][j] );
+				B.add_vertex_to_facet( faces[i][j] - minFacet );
 			}
 			B.end_facet();
 		}
@@ -51,31 +51,34 @@ DegradeAnObject::DegradeAnObject(char const *input, char const *output) {
 	
 	this->output = output;
 	// load the input file
-	load_obj( input, coords, faces );
+	load_obj(input);
 	if( coords.size() == 0 ) {
 		std::cout << "Aucun objet n'a été chargé" << std::endl;
 	}
 	else {
 		std::cout << "objet chargé" << std::endl;
-	  
-	 // build a polyhedron from the loaded arrays
-
-		polyhedron_builder<HalfedgeDS> builder( coords, faces );
-		P.delegate( builder );
+		std::reverse(minFacets.begin(), minFacets.end());
+		std::reverse(names.begin(), names.end());
+		std::reverse(coords.begin(), coords.end());
+		std::reverse(faces.begin(), faces.end());
+	 // build polyhedrons from the loaded arrays
+		for(int i = 0 ; i < names.size() ; i++) {
+			Polyhedron P;
+			polyhedron_builder<HalfedgeDS> builder( coords[i], faces[i], minFacets[i] );
+			P.delegate( builder );
+			polys.push_back(P);
+		}
 	}
 }
 
 void DegradeAnObject::exportObj() {
 	std::ofstream ofs(output);
-	CGAL::print_polyhedron_wavefront(ofs, P);
+	for(int i = 0 ; i < polys.size() ; i++) {
+		CGAL::print_polyhedron_wavefront(ofs, polys[i]);
+	}
 	ofs.close();
 	std::cout << "objet exporté" << std::endl;
 	
-	/* EXPORT OFF
-	// write the polyhedron out as a .OFF file
-	std::ofstream os("dump.off");
-	os << P;
-	os.close();*/
 }
  
 // reads the first integer from a string in the form
@@ -92,59 +95,84 @@ int DegradeAnObject::get_first_integer( const char *v ){
 // barebones .OFF file reader, throws away texture coordinates, normals, etc.
 // stores results in input coords array, packed [x0,y0,z0,x1,y1,z1,...] and
 // faces array packed [T0a,T0b,T0c,T1a,T1b,T1c,...]
-void DegradeAnObject::load_obj( const char *filename, std::vector<double> &coords, std::vector< std::vector<int> > &faces ){
-	double x, y, z;
-	char line[1024], str[1024];
-
-	// open the file, return if open fails
-	FILE *fp = fopen(filename, "r" );
-	if( !fp ) return;
-  
-	// read lines from the file, if the first character of the
-	// line is 'v', we are reading a vertex, otherwise, if the
-	// first character is a 'f' we are reading a facet
-	while( fgets( line, 1024, fp ) ){
-		if(line[0] == "o") {
-			char *token = std::strtok(line, " ");
-			while (token != NULL) {
-				if(token[0] != 'o') {
-					names.push_back(token);
-				}
-				token = std::strtok(NULL, " ");
-			}
-		}
-		else if(line[0] == 'v' && (line[1] != 't' && line[1] != 'n')){
-			sscanf( line, "%*s%lf%lf%lf", &x, &y, &z );
-			coords.push_back( x );
-			coords.push_back( y );
-			coords.push_back( z );
-		}
-		else if( line[0] == 'f' ){
-			char *token = std::strtok(line, " ");
-			std::vector<int> f;
-			while (token != NULL) {
-				if(token[0] != 'f') {
-					f.push_back(get_first_integer(token)-1);
-				}
-				token = std::strtok(NULL, " ");
-			}
-			faces.push_back(f);
-			/*
-			sscanf( line, "%*s%s%s%s%s", v0, v1, v2, v3 );
-			faces.push_back( get_first_integer( v0 )-1 );
-			faces.push_back( get_first_integer( v1 )-1 );
-			faces.push_back( get_first_integer( v2 )-1 );
-			faces.push_back( get_first_integer( v3 )-1 );
-			*/
-		}
+void DegradeAnObject::load_obj(const char *filename){
+	std::string line;
+	std::ifstream myFile (filename);
+	if(myFile.is_open())
+	{
+		readFromThisObject(myFile);
+		myFile.close();
 	}
-	fclose(fp); 
 }
 
-Polyhedron DegradeAnObject::getPolyhedron() {
-	return P;
+void DegradeAnObject::readFromThisObject(std::ifstream & myFile) {
+	int curMinFacet = -1;
+	std::string line;
+	std::vector<double> vertexes;
+	std::vector< std::vector<int> > facets;
+	std::string name;
+
+	while(getline(myFile,line)){
+		if(line.at(0) == 'v' && (line.at(1) != 't' && line.at(1) != 'n')){
+			std::vector<std::string> vert = split(line, ' ');
+			vertexes.push_back(::atof(vert[1].c_str()));
+			vertexes.push_back(::atof(vert[2].c_str()));
+			vertexes.push_back(::atof(vert[3].c_str()));
+		}
+		else if( line.at(0) == 'f' ){
+			std::vector<std::string> face = split(line, ' ');
+			std::vector<int> f;
+			for(int i = 1 ; i < face.size() ; i++) {
+				int j = ::atoi(face[i].c_str()) - 1;
+				f.push_back(j);
+				if(curMinFacet == -1) {
+					curMinFacet = j;
+				}
+				else if(j < curMinFacet) {
+					curMinFacet = j;
+				}
+			}
+			facets.push_back(f);
+		}
+		else if(line.at(0) == 'o') {
+			name = line.substr(2);
+			readFromThisObject(myFile);
+		}	
+	}
+	minFacets.push_back(curMinFacet);
+	names.push_back(name);
+	coords.push_back(vertexes);
+	faces.push_back(facets);
 }
 
+std::vector<std::string> DegradeAnObject::split(const std::string &s, char delim) {
+    std::stringstream ss(s);
+    std::string item;
+    std::vector<std::string> tokens;
+    while (getline(ss, item, delim)) {
+        tokens.push_back(item);
+    }
+    return tokens;
+}
+
+char* DegradeAnObject::subchars(char* str, short x, short y){
+    char* ret = new char[y+1];
+    for(short i=x; i<x+y; i++)
+        ret[i-x]=str[i];
+    ret[y] = '\0';
+    return ret;
+}
+
+/*
+Polyhedron DegradeAnObject::getPolyhedrons() {
+	return polys;
+}
+*/
+std::vector<std::string> DegradeAnObject::getNames() {
+	return names;
+}
+
+/*
 void DegradeAnObject::changeAllPoints() {
 	for ( Vertex_iterator v = P.vertices_begin(); v != P.vertices_end(); ++v) {
 		Point_3 p(v->point().x()+((double) rand() / (RAND_MAX)),v->point().y()+((double) rand() / (RAND_MAX)),v->point().z()+((double) rand() / (RAND_MAX)));
@@ -152,3 +180,4 @@ void DegradeAnObject::changeAllPoints() {
         std::cout << v->point() << std::endl;
 	}
 }
+*/
