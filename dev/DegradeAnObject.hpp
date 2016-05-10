@@ -30,8 +30,11 @@ class DegradeAnObject {
 	std::vector<std::string> split(const std::string &s, char delim);
 	void exportObj();
 	void exportObj(Polyhedron P);
-	void changeAllPoints();
+	
 	std::vector<Polyhedron> getPolyhedrons();
 	std::vector<std::string> getNames();
+	
+	bool getFacetFromPoint(Polyhedron P, double x, double y, double z, Facet &f);
+	void changeAllPoints();
 	//char* subchars(char* str, short x, short y);
 };

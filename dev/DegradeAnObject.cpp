@@ -181,6 +181,20 @@ std::vector<std::string> DegradeAnObject::getNames() {
 	return names;
 }
 
+bool DegradeAnObject::getFacetFromPoint(Polyhedron P, double x, double y, double z, Facet &f) {
+	Point_3 p(x,y,z);
+	for(Facet_iterator fi = P.facets_begin(); fi != P.facets_end() ; ++fi) {
+		Point_3 p1 = fi->halfedge()->vertex()->point();
+		Point_3 p2 = fi->halfedge()->next()->vertex()->point();
+		Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
+		Plane_3 pl(p1, p2, p3);
+		if(pl.has_on(p)) {
+			f = (*fi);
+			return true;
+		}
+	}
+	return false;
+}
 
 void DegradeAnObject::changeAllPoints() {
 	for(std::vector<Polyhedron>::iterator P = polys.begin() ; P != polys.end() ; ++P) {
