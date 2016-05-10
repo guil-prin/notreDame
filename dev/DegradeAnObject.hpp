@@ -26,11 +26,12 @@ class DegradeAnObject {
 	DegradeAnObject(char const *input, char const *output);	
 	int get_first_integer( const char *v );
 	void load_obj( const char *filename );
-	void readFromThisObject(std::ifstream & myFile);
+	void readFromThisObject(std::ifstream & myFile, std::string n, int it);
 	std::vector<std::string> split(const std::string &s, char delim);
 	void exportObj();
-	//Polyhedron getPolyhedron();
-	//void changeAllPoints();
+	void exportObj(Polyhedron P);
+	void changeAllPoints();
+	std::vector<Polyhedron> getPolyhedrons();
 	std::vector<std::string> getNames();
-	char* subchars(char* str, short x, short y);
+	//char* subchars(char* str, short x, short y);
 };
