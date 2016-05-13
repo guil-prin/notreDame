@@ -31,10 +31,13 @@ class DegradeAnObject {
 	void exportObj();
 	void exportObj(Polyhedron P);
 	
-	std::vector<Polyhedron> getPolyhedrons();
+	std::vector<Polyhedron>& getPolyhedrons();
 	std::vector<std::string> getNames();
 	
-	bool getFacetFromPoint(Polyhedron P, double x, double y, double z, Facet &f);
+	int getFacetsFromPoint(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index);
+	int getFacetsFromPlan(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index);
+	int removeSamePlanFacets(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index);
+	void impactAFace(Point_3 p, Facet &fs, int index);
 	void changeAllPoints();
 	//char* subchars(char* str, short x, short y);
 };

@@ -24,37 +24,29 @@ int main(int argc, char** argv) {
 	char const *input = argv[1];
 	char const *output = argv[2];
 	DegradeAnObject o(input, output);
+
+	std::vector<Facet> fs;
+	std::vector<int> indexes;
+	Point_3 p(1.0, 1.0, 0.6);
+	std::cout << o.getFacetsFromPoint(p, fs, indexes) << std::endl;
 	
-	std::vector<Polyhedron> polys = o.getPolyhedrons();
-	Polyhedron P = polys[0];
-	
-	
-	Facet f;
-	std::cout << o.getFacetFromPoint(P, 1.0, 1.0, 0.5, f) << std::endl;
-	std::cout << f.halfedge()->vertex()->point() << std::endl;
-	std::cout << f.halfedge()->next()->vertex()->point() << std::endl;
-	std::cout << f.halfedge()->next()->next()->vertex()->point() << std::endl;
-	std::cout << f.halfedge()->next()->next()->next()->vertex()->point() << std::endl;
-	
-	
-	for(Facet_iterator fi = P.facets_begin() ; fi != P.facets_end() ; ++fi) {
-		Point_3 p1 = fi->halfedge()->vertex()->point();
-		Point_3 p2 = fi->halfedge()->next()->vertex()->point();
-		Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
-		Point_3 p4 = fi->halfedge()->next()->next()->next()->vertex()->point();
-		if(p1 == f.halfedge()->vertex()->point()
-		&& p2 == f.halfedge()->next()->vertex()->point() 
-		&& p3 == f.halfedge()->next()->next()->vertex()->point() 
-		&& p4 == f.halfedge()->next()->next()->next()->vertex()->point()) {
-			Halfedge_handle h = P.create_center_vertex(fi->halfedge());
-			h->vertex()->point() = Point_3(1.0, 1.0, 0.5);
-		}
+	if(fs.size() == 1) {
+		o.impactAFace(p, fs[0], indexes[0]);
 	}
+	/*else if(fs.size() == 2) {
+		for(int i = 0 ; i < polys.size() ; i++) {
+			Halfedge_handle hh;
+			for(Halfedge_iterator hi = polys[i].halfedge_begin() ; hi != polys[i].halfedge_begin_end() ; ++fi) {
+			}
+			Halfedge_handle hh = polys[i].split_edge(fi->halfedge());
+			hh->vertex()->point() = Point_3(1.0-0.2, 1.0-0.2, 0.5);
+		}
+	}*/
 	
 	//h->vertex()->point() = Point_3(h->vertex()->point().x(),h->vertex()->point().y()-1,h->vertex()->point().z());
 	
 	
-	o.exportObj(P);
+	o.exportObj();
 	
 	return 0;
 }

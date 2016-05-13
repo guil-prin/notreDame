@@ -173,7 +173,7 @@ char* DegradeAnObject::subchars(char* str, short x, short y){
     return ret;
 }
 */
-std::vector<Polyhedron> DegradeAnObject::getPolyhedrons() {
+std::vector<Polyhedron>& DegradeAnObject::getPolyhedrons() {
 	return polys;
 }
 
@@ -181,19 +181,55 @@ std::vector<std::string> DegradeAnObject::getNames() {
 	return names;
 }
 
-bool DegradeAnObject::getFacetFromPoint(Polyhedron P, double x, double y, double z, Facet &f) {
-	Point_3 p(x,y,z);
-	for(Facet_iterator fi = P.facets_begin(); fi != P.facets_end() ; ++fi) {
-		Point_3 p1 = fi->halfedge()->vertex()->point();
-		Point_3 p2 = fi->halfedge()->next()->vertex()->point();
-		Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
-		Plane_3 pl(p1, p2, p3);
-		if(pl.has_on(p)) {
-			f = (*fi);
-			return true;
+// Warning : only for triangle mesh. NO. QUAD. MESH.
+int DegradeAnObject::getFacetsFromPoint(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index) {
+	int nbFacets = getFacetsFromPlan(p, fs, index);
+	if(nbFacets > 1) {
+		nbFacets = removeSamePlanFacets(p, fs, index);
+	}
+	return nbFacets;
+}
+
+int DegradeAnObject::getFacetsFromPlan(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index) {
+	for(int i = 0 ; i < polys.size() ; i++) {
+		for(Facet_iterator fi = polys[i].facets_begin(); fi != polys[i].facets_end() ; ++fi) {
+			Point_3 p1 = fi->halfedge()->vertex()->point();
+			Point_3 p2 = fi->halfedge()->next()->vertex()->point();
+			Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
+			Plane_3 pl(p1, p2, p3);
+			if(pl.has_on(p)) {
+				index.push_back(i);
+				fs.push_back(*fi);
+			}
 		}
 	}
-	return false;
+	return fs.size();
+}
+
+int DegradeAnObject::removeSamePlanFacets(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index) {
+	std::vector<Facet> goodFacets;
+	for(int i = 0 ; i < fs.size() ; i++) {
+		std::vector<Point_3> trianglePoints;
+		Halfedge_handle hh = fs[i].halfedge();
+		Point_3 init = hh->vertex()->point();
+		trianglePoints.push_back(init);
+		hh = hh->next();
+		while(hh->vertex()->point() != init) {
+			trianglePoints.push_back(hh->vertex()->point());
+			hh = hh->next();
+		}
+		Kernel::Triangle_3 t3(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
+		if(!(t3.has_on(p))) {
+			fs.erase(fs.begin() + i);
+			index.erase(index.begin() + i);
+		}
+	}
+	return fs.size();
+}
+
+void DegradeAnObject::impactAFace(Point_3 p, Facet &fs, int index) {
+	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
+	h->vertex()->point() = p;
 }
 
 void DegradeAnObject::changeAllPoints() {
