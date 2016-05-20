@@ -217,7 +217,7 @@ int DegradeAnObject::getFacetFromPoint(Point_3 p, Facet &fs, int index) {
 
 void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int index) {
 	Facet chkF;
-	Halfedge_handle h = barycentricMesh(fs, index);
+	Halfedge_handle h = splitFacet(fs, index);
 	std::cout << getFacetFromPoint(p, chkF, index) << std::endl;
 	if(distanceBetweenPointAndFacet(p, chkF.halfedge()->vertex()->point()) > epsilon) {
 		refineFacetMesh(p, chkF, epsilon, index);
@@ -227,17 +227,36 @@ void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int 
 	}
 }
 
-Halfedge_handle DegradeAnObject::barycentricMesh(Facet &fs, int index) {
-	Point_3 p1 = fs.halfedge()->vertex()->point();
-	Point_3 p2 = fs.halfedge()->next()->vertex()->point();
-	Point_3 p3 = fs.halfedge()->next()->next()->vertex()->point();
+Halfedge_handle DegradeAnObject::splitFacet(Facet &fs, int index) {
 	splitEdgesOfFacet(fs, index);
-	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
-	h->vertex()->point() = Point_3((p1.x() + p2.x() + p3.x())/3, (p1.y() + p2.y() + p3.y())/3, (p1.z() + p2.z() + p3.z())/3);
+	Halfedge_handle h = barycentricMesh(fs, index);
+	//noTVertice(fs, index);
 	return h;
 }
 
-void DegradeAnObject::splitEdgesOfFacet(Facet fs, int index) {
+Halfedge_handle DegradeAnObject::barycentricMesh(Facet &fs, int index) {
+	std::vector<Point_3> points;
+	Halfedge_handle hh = fs.halfedge();
+	Point_3 p1 = hh->vertex()->point();
+	points.push_back(p1);
+	hh = hh->next();
+	while(hh->vertex()->point() != p1) {
+		points.push_back(hh->vertex()->point());
+		hh = hh->next();
+	}
+	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
+	h->vertex()->point() = meanPoints(points);
+	return h;
+}
+
+void DegradeAnObject::noTVertice(Facet fs, int index) {
+	std::cout << fs.halfedge()->vertex()->point() << std::endl;
+	barycentricMesh(*(fs.halfedge()->opposite()->facet()), index);
+	//barycentricMesh(*(fs.halfedge()->next()->opposite()->facet()), index);
+	//barycentricMesh(*(fs.halfedge()->next()->next()->opposite()->facet()), index);
+}
+
+void DegradeAnObject::splitEdgesOfFacet(Facet &fs, int index) {
 	Halfedge_handle hh = fs.halfedge();
 	Point_3 p1 = hh->vertex()->point();
 	Point_3 p2 = hh->next()->vertex()->point();
@@ -255,6 +274,16 @@ void DegradeAnObject::splitEdgesOfFacet(Facet fs, int index) {
 Point_3 DegradeAnObject::meanPoints(Point_3 p1, Point_3 p2) {
 	Point_3 pt(p2.x() + p1.x(), p2.y() + p1.y(), p2.z() + p1.z());
 	pt = Point_3(pt.x()/2, pt.y()/2, pt.z()/2);
+	return pt;
+}
+
+Point_3 DegradeAnObject::meanPoints(std::vector<Point_3> points) {
+	Point_3 pt(0.0, 0.0, 0.0);
+	int size = points.size();
+	for(int i = 0 ; i < size ; i++) {
+		pt = Point_3(pt.x() + points[i].x(), pt.y() + points[i].y(), pt.z() + points[i].z());
+	}
+	pt = Point_3(pt.x()/size, pt.y()/size, pt.z()/size);
 	return pt;
 }
 

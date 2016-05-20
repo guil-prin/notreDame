@@ -37,9 +37,12 @@ class DegradeAnObject {
 	int getFacetsFromPoint(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index);
 	int getFacetFromPoint(Point_3 p, Facet &fs, int index);
 	void refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int index);
-	Halfedge_handle barycentricMesh(Facet &fs, int index);
+	Halfedge_handle splitFacet(Facet fs, int index);
+	Halfedge_handle barycentricMesh(Facet fs, int index);
+	void noTVertice(Facet fs, int index);
 	void splitEdgesOfFacet(Facet fs, int index);
 	Point_3 meanPoints(Point_3 p1, Point_3 p2);
+	Point_3 meanPoints(std::vector<Point_3> points);
 	double distanceBetweenPointAndFacet(Point_3 p, Point_3 pfs);
 	void impactAFace(Point_3 p, Facet &fs, int index);
 	void changeAllPoints();
