@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <time.h>
  
+ #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_incremental_builder_3.h>
 #include <CGAL/Polyhedron_3.h>
@@ -27,11 +29,11 @@ int main(int argc, char** argv) {
 
 	std::vector<Facet> fs;
 	std::vector<int> indexes;
-	Point_3 p(1.0, 1.0, 0.6);
+	Point_3 p(1.0, 0.5, 0.8);
 	std::cout << o.getFacetsFromPoint(p, fs, indexes) << std::endl;
 	
-	if(fs.size() == 1) {
-		o.impactAFace(p, fs[0], indexes[0]);
+	if(fs.size() == 1) { // On a facet
+		o.refineFacetMesh(p, fs[0], 0.1, indexes[0]);
 	}
 	/*else if(fs.size() == 2) {
 		for(int i = 0 ; i < polys.size() ; i++) {

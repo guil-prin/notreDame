@@ -3,7 +3,10 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <math.h>
  
+#include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
+
 #include <CGAL/Simple_cartesian.h>
 #include <CGAL/Polyhedron_incremental_builder_3.h>
 #include <CGAL/Polyhedron_3.h>
@@ -183,21 +186,13 @@ std::vector<std::string> DegradeAnObject::getNames() {
 
 // Warning : only for triangle mesh. NO. QUAD. MESH.
 int DegradeAnObject::getFacetsFromPoint(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index) {
-	int nbFacets = getFacetsFromPlan(p, fs, index);
-	if(nbFacets > 1) {
-		nbFacets = removeSamePlanFacets(p, fs, index);
-	}
-	return nbFacets;
-}
-
-int DegradeAnObject::getFacetsFromPlan(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index) {
 	for(int i = 0 ; i < polys.size() ; i++) {
 		for(Facet_iterator fi = polys[i].facets_begin(); fi != polys[i].facets_end() ; ++fi) {
 			Point_3 p1 = fi->halfedge()->vertex()->point();
 			Point_3 p2 = fi->halfedge()->next()->vertex()->point();
 			Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
-			Plane_3 pl(p1, p2, p3);
-			if(pl.has_on(p)) {
+			Kernel::Triangle_3 t3(p1, p2, p3);
+			if(t3.has_on(p)) {
 				index.push_back(i);
 				fs.push_back(*fi);
 			}
@@ -206,30 +201,70 @@ int DegradeAnObject::getFacetsFromPlan(Point_3 p, std::vector<Facet> &fs, std::v
 	return fs.size();
 }
 
-int DegradeAnObject::removeSamePlanFacets(Point_3 p, std::vector<Facet> &fs, std::vector<int> &index) {
-	std::vector<Facet> goodFacets;
-	for(int i = 0 ; i < fs.size() ; i++) {
-		std::vector<Point_3> trianglePoints;
-		Halfedge_handle hh = fs[i].halfedge();
-		Point_3 init = hh->vertex()->point();
-		trianglePoints.push_back(init);
-		hh = hh->next();
-		while(hh->vertex()->point() != init) {
-			trianglePoints.push_back(hh->vertex()->point());
-			hh = hh->next();
-		}
-		Kernel::Triangle_3 t3(trianglePoints[0], trianglePoints[1], trianglePoints[2]);
-		if(!(t3.has_on(p))) {
-			fs.erase(fs.begin() + i);
-			index.erase(index.begin() + i);
+int DegradeAnObject::getFacetFromPoint(Point_3 p, Facet &fs, int index) {
+	for(Facet_iterator fi = polys[index].facets_begin(); fi != polys[index].facets_end() ; ++fi) {
+		Point_3 p1 = fi->halfedge()->vertex()->point();
+		Point_3 p2 = fi->halfedge()->next()->vertex()->point();
+		Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
+		Kernel::Triangle_3 t3(p1, p2, p3);
+		if(t3.has_on(p)) {
+			fs = *fi;
+			return 1;
 		}
 	}
-	return fs.size();
+	return 0;
+}
+
+void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int index) {
+	Facet chkF;
+	Halfedge_handle h = barycentricMesh(fs, index);
+	std::cout << getFacetFromPoint(p, chkF, index) << std::endl;
+	if(distanceBetweenPointAndFacet(p, chkF.halfedge()->vertex()->point()) > epsilon) {
+		refineFacetMesh(p, chkF, epsilon, index);
+	}
+	else {
+		impactAFace(p, chkF, index);
+	}
+}
+
+Halfedge_handle DegradeAnObject::barycentricMesh(Facet &fs, int index) {
+	Point_3 p1 = fs.halfedge()->vertex()->point();
+	Point_3 p2 = fs.halfedge()->next()->vertex()->point();
+	Point_3 p3 = fs.halfedge()->next()->next()->vertex()->point();
+	splitEdgesOfFacet(fs, index);
+	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
+	h->vertex()->point() = Point_3((p1.x() + p2.x() + p3.x())/3, (p1.y() + p2.y() + p3.y())/3, (p1.z() + p2.z() + p3.z())/3);
+	return h;
+}
+
+void DegradeAnObject::splitEdgesOfFacet(Facet fs, int index) {
+	Halfedge_handle hh = fs.halfedge();
+	Point_3 p1 = hh->vertex()->point();
+	Point_3 p2 = hh->next()->vertex()->point();
+	Point_3 p3 = hh->next()->next()->vertex()->point();
+	Halfedge_handle hh1 = polys[index].split_edge(hh);
+	hh1->vertex()->point() = meanPoints(p1, p3);
+	hh = hh->next();
+	Halfedge_handle hh2 = polys[index].split_edge(hh);
+	hh2->vertex()->point() = meanPoints(p2, p1);
+	hh = hh->next();
+	Halfedge_handle hh3 = polys[index].split_edge(hh);
+	hh3->vertex()->point() = meanPoints(p2, p3);
+}
+
+Point_3 DegradeAnObject::meanPoints(Point_3 p1, Point_3 p2) {
+	Point_3 pt(p2.x() + p1.x(), p2.y() + p1.y(), p2.z() + p1.z());
+	pt = Point_3(pt.x()/2, pt.y()/2, pt.z()/2);
+	return pt;
+}
+
+double DegradeAnObject::distanceBetweenPointAndFacet(Point_3 p, Point_3 pfs) {
+	return sqrt((p.x() - pfs.x()) * (p.x() - pfs.x()) + (p.y() - pfs.y()) * (p.y() - pfs.y()) + (p.z() - pfs.z()) * (p.z() - pfs.z()));
 }
 
 void DegradeAnObject::impactAFace(Point_3 p, Facet &fs, int index) {
 	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
-	h->vertex()->point() = p;
+	h->vertex()->point() = Point_3	(1.0-0.1, 0.4, 0.8);;
 }
 
 void DegradeAnObject::changeAllPoints() {
