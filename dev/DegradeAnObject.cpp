@@ -224,8 +224,7 @@ void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int 
 		refineFacetMesh(p, chkF, epsilon, index);
 	}
 	else {
-		std::cout << "stop" << std::endl;
-		//impactAFace(p, chkF, index);
+		impactAFace(p, chkF, index);
 	}
 }
 
