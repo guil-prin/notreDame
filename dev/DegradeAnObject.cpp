@@ -3,6 +3,7 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <stdio.h>
 #include <math.h>
  
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -223,18 +224,19 @@ void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int 
 		refineFacetMesh(p, chkF, epsilon, index);
 	}
 	else {
-		impactAFace(p, chkF, index);
+		std::cout << "stop" << std::endl;
+		//impactAFace(p, chkF, index);
 	}
 }
 
-Halfedge_handle DegradeAnObject::splitFacet(Facet &fs, int index) {
+Halfedge_handle DegradeAnObject::splitFacet(Facet fs, int index) {
 	splitEdgesOfFacet(fs, index);
 	Halfedge_handle h = barycentricMesh(fs, index);
 	//noTVertice(fs, index);
 	return h;
 }
 
-Halfedge_handle DegradeAnObject::barycentricMesh(Facet &fs, int index) {
+Halfedge_handle DegradeAnObject::barycentricMesh(Facet fs, int index) {
 	std::vector<Point_3> points;
 	Halfedge_handle hh = fs.halfedge();
 	Point_3 p1 = hh->vertex()->point();
@@ -256,7 +258,7 @@ void DegradeAnObject::noTVertice(Facet fs, int index) {
 	//barycentricMesh(*(fs.halfedge()->next()->next()->opposite()->facet()), index);
 }
 
-void DegradeAnObject::splitEdgesOfFacet(Facet &fs, int index) {
+void DegradeAnObject::splitEdgesOfFacet(Facet fs, int index) {
 	Halfedge_handle hh = fs.halfedge();
 	Point_3 p1 = hh->vertex()->point();
 	Point_3 p2 = hh->next()->vertex()->point();
@@ -293,7 +295,7 @@ double DegradeAnObject::distanceBetweenPointAndFacet(Point_3 p, Point_3 pfs) {
 
 void DegradeAnObject::impactAFace(Point_3 p, Facet &fs, int index) {
 	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
-	h->vertex()->point() = Point_3	(1.0-0.1, 0.4, 0.8);;
+	h->vertex()->point() = Point_3	(1.0-0.1, 0.5, 0.8);;
 }
 
 void DegradeAnObject::changeAllPoints() {
