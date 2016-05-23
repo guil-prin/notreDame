@@ -220,11 +220,16 @@ void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int 
 	Facet chkF;
 	Halfedge_handle h = splitFacet(fs, index);
 	std::cout << getFacetFromPoint(p, chkF, index) << std::endl;
-	if(distanceBetweenPointAndFacet(p, chkF.halfedge()->vertex()->point()) > epsilon) {
-		refineFacetMesh(p, chkF, epsilon, index);
+	if(getFacetFromPoint(p, chkF, index)) {
+		if(distanceBetweenPointAndFacet(p, chkF.halfedge()->vertex()->point()) > epsilon) {
+			refineFacetMesh(p, chkF, epsilon, index);
+		}
+		else {
+			impactAFace(chkF, index);
+		}
 	}
 	else {
-		impactAFace(p, chkF, index);
+		impactAFace(fs, index);
 	}
 }
 
@@ -294,9 +299,10 @@ double DegradeAnObject::distanceBetweenPointAndFacet(Point_3 p, Point_3 pfs) {
 	return sqrt((p.x() - pfs.x()) * (p.x() - pfs.x()) + (p.y() - pfs.y()) * (p.y() - pfs.y()) + (p.z() - pfs.z()) * (p.z() - pfs.z()));
 }
 
-void DegradeAnObject::impactAFace(Point_3 p, Facet &fs, int index) {
-	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
-	h->vertex()->point() = Point_3	(1.0-0.1, 0.5, 0.8);;
+void DegradeAnObject::impactAFace(Facet &fs, int index) {
+	Halfedge_handle h = barycentricMesh(fs, index);
+	Point_3 pt = h->vertex()->point();
+	h->vertex()->point() = Point_3(pt.x() - 0.1, pt.y(), pt.z());
 }
 
 void DegradeAnObject::changeAllPoints() {

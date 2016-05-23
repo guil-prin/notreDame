@@ -44,7 +44,7 @@ class DegradeAnObject {
 	Point_3 meanPoints(Point_3 p1, Point_3 p2);
 	Point_3 meanPoints(std::vector<Point_3> points);
 	double distanceBetweenPointAndFacet(Point_3 p, Point_3 pfs);
-	void impactAFace(Point_3 p, Facet &fs, int index);
+	void impactAFace(Facet &fs, int index);
 	void changeAllPoints();
 	//char* subchars(char* str, short x, short y);
 };
