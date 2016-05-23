@@ -33,7 +33,7 @@ int main(int argc, char** argv) {
 	std::cout << o.getFacetsFromPoint(p, fs, indexes) << std::endl;
 	
 	if(fs.size() == 1) { // On a facet
-		o.refineFacetMesh(p, fs[0], 0.1, indexes[0]);
+		o.refineFacetMesh(p, fs[0], 0.5, indexes[0]);
 	}
 	/*else if(fs.size() == 2) {
 		for(int i = 0 ; i < polys.size() ; i++) {

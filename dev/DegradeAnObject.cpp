@@ -229,9 +229,12 @@ void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int 
 }
 
 Halfedge_handle DegradeAnObject::splitFacet(Facet fs, int index) {
+	Halfedge_handle hh1 = fs.halfedge();
+	Halfedge_handle hh2 = fs.halfedge()->next();
+	Halfedge_handle hh3 = fs.halfedge()->next()->next();
 	splitEdgesOfFacet(fs, index);
 	Halfedge_handle h = barycentricMesh(fs, index);
-	//noTVertice(fs, index);
+	noTVertice(hh1, hh2, hh3, index);
 	return h;
 }
 
@@ -250,11 +253,10 @@ Halfedge_handle DegradeAnObject::barycentricMesh(Facet fs, int index) {
 	return h;
 }
 
-void DegradeAnObject::noTVertice(Facet fs, int index) {
-	std::cout << fs.halfedge()->vertex()->point() << std::endl;
-	barycentricMesh(*(fs.halfedge()->opposite()->facet()), index);
-	//barycentricMesh(*(fs.halfedge()->next()->opposite()->facet()), index);
-	//barycentricMesh(*(fs.halfedge()->next()->next()->opposite()->facet()), index);
+void DegradeAnObject::noTVertice(Halfedge_handle hh1, Halfedge_handle hh2, Halfedge_handle hh3, int index) {
+	barycentricMesh(*(hh1->opposite()->facet()), index);
+	barycentricMesh(*(hh2->opposite()->facet()), index);
+	barycentricMesh(*(hh3->opposite()->facet()), index);
 }
 
 void DegradeAnObject::splitEdgesOfFacet(Facet fs, int index) {
