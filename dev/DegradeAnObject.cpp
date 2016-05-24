@@ -1,3 +1,5 @@
+// obj loader from http://jamesgregson.blogspot.fr/2012/05/example-code-for-building.html
+
 #include <fstream>
 #include <vector>
 #include <string>
@@ -16,7 +18,7 @@
 
 #include "DegradeAnObject.hpp"
 #include "TypeDefs.hpp"
- 
+
 // A modifier creating a triangle with the incremental builder.
 template<class HDS>
 class polyhedron_builder : public CGAL::Modifier_base<HDS> {
