@@ -1,7 +1,11 @@
-\documentclass[a4paper,french]{article}
+\documentclass[a4paper,french]{report}
 \usepackage[utf8]{inputenc}
 \usepackage{graphicx}
+\usepackage{algorithm}
+\usepackage{algorithmic}
 \usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage{titlesec}
+\titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter{ - }}{0pt}{\Huge\bfseries}
 \usepackage{babel}
 \setlength{\parindent}{20pt}
 
@@ -30,24 +34,24 @@
 	\newpage
 	\tableofcontents
 	\newpage
-	\section{Positionnement du projet}
-		\subsection{Rappel : Contexte et définition du problème}
+	\chapter{Positionnement du projet}
+		\section{Rappel : Contexte et définition du problème}
 			Dans le cadre de reconstitutions virtuelles historiques,  le challenge de l'équipe pluridisciplinaire réunie (informaticiens et historiens) consiste à s'approcher au plus près de la réalité historique de l'environnement reconstruit. Au travers de recherches approfondies dans divers fonds d'archives, les historiens apportent ainsi des connaissances fondamentales à la reconstruction 3D des environnements ciblés, permettant ensuite une visualisation plus ou moins réaliste et/ou plus ou moins interactive de ces environnements, pour des applications diverses à destination des chercheurs ou du grand public.. \par
 			Un défaut fréquent de ces reconstitutions réside dans le fait qu'ils apparaissent comme neufs, ce qui est clairement préjudiciable à leur interprétation dans leur contexte historique. Un travail complémentaire, effectué par des infographistes, consiste alors à introduire des dégradations dans ces environnements, provenant tant de causes naturelles (vent, pluie, etc.) que humaines (usures dues aux passages répétés, chocs, déprédations volontaires, etc.). \par
 			L'objectif de ce projet est de se focaliser sur un type particulier de dégradation, lié à l'usure et aux chocs reçus par les pierres qui apparaissent dans le bâti reconstruit, qu'il s'agisse de marches d'escalier ou des pierres des murs. Le travail à réaliser consistera à développer le code d'une méthode existante et à tester son utilisation dans le cadre d'une reconstitution du Pont Notre Dame en 1720.
-		\subsection{Encadrants}
+		\section{Encadrants}
 			Je suis encadré pendant ce projet par M. Christophe Renaud, directeur du LISIC et responsable de l'équipe IMAP (Images et Apprentissage) du laboratoire de recherche, et par M. Rousselle, maître de conférences, enseignant-chercheur à l'IUT de Calais-Boulogne, et membre de l'équipe IMAP du laboratoire de recherche.
-		\subsection{L'état initial}
+		\section{L'état initial}
 			Le pont Notre Dame a déjà été intégralement modélisé sous 3DsMax par M. Rousselle, et m'a été fourni au format Wavefront obj à des fins de tests. 
-		\subsection{Durée du projet}
+		\section{Durée du projet}
 			La période libre de projet s'étale du 18 avril au 05 juin 2016. Toutefois, comme mentionné par M. Fabien Teytaud, responsable du Master 1 Informatique ISIDIS, il est fort recommandé de commencer le projet dès le mois de janvier.
-		\subsection{Les outils mis en place}
+		\section{Les outils mis en place}
 			Une boite de dépôt github a été créée pour l'occasion, à l'adresse suivante :  https://github.com/guil-prin/notreDame . Régulièrement mise à jour, vous pouvez y trouver l'évolution du développement (dossier "dev"), les documents produits pour le projet (dont ce rapport, dans le dossier "documentation"), et les sources finales (dossier "sources"). Les descriptions fonctionnelles du projet sont d'ailleurs dans le cahier des charges fourni le 25 avril. \par
 			Un disque dur avec un système d'exploitation Debian vierge installé m'a été gracieusement prêté par Nathalie Ramat, responsable du parc informatique de l'ULCO, afin que je puisse bénéficier du statut d'administrateur sur mon pc, et que je puisse donc installer les outils nécessaires au développement du projet. \par
 			Une bibliothèque c++ a aussi été mise en place : CGAL. Disponible sur le site http://www.cgal.org/, elle permet de travailler sur une structure 3D avec des outils fournis pour définir un objet 3D et ses composants (arêtes, sommets, faces). La recherche de cette bibliothèque a été une partie du travail préliminaire au projet.
-		\newpage
-	\section{Travaux préliminaires}
-		\subsection{Étude documentaire}
+			
+	\chapter{Travaux préliminaires}
+		\section{Étude documentaire}
 			Deux notes de recherche m'ont été confiés par M. Renaud lors de notre premier entretien : 
 				\begin{itemize}
 					\item Surface Aging by Impacts \cite{PPD01}
@@ -57,26 +61,85 @@
 			Il m'a donc été demandé à ce moment de consulter ces papiers de recherche, et plus particulièrement Surface Aging by Impacts \cite{PPD01}. J'ai eu plusieurs réunions avec M. Rousselle pour discuter de ce papier en détail. J'ai eu, à la demande de ce dernier, à réaliser une synthèse personnelle de ce papier afin de me faire comprendre la démarche d'un document scientifique (un cours d'initiation à la recherche a été enseigné par M. Verel à ce propos, mais n'a eu lieu que après cette réunion). Cette synthèse est disponible dans le dossier documentation du projet. \par
 			Une troisième note de recherche me sera fournie au début de la période de projet, Real-Time Relief Mapping on Arbitrary Polygonal Surfaces \cite{Policarpo:2005:RRM:1053427.1053453}. Bien que consultée, elle ne sera pas intéressante pour cette période de projet.
 			
-		\subsection{Recherche de bibliothèques}
+		\section{Recherche de bibliothèques}
 			Au cours de ces entretiens, il m'a aussi été demandé de rechercher des bibliothèques c++ afin d'éviter à devoir tout coder. En effet, la modélisation 3D est un domaine extrêmement en vogue à l'heure actuelle (que ce soit pour des simulations historiques, des modélisations de prototypes, des créations de jeux vidéos, ...), et de nombreuses personnes ont déjà travaillé dans ce domaine. Deux bibliothèques ont ainsi été trouvées par mes soins : les bibliothèques Assimp (http://www.assimp.org/) et Magnum (http://mosra.cz/blog/magnum.php), don la dernière n'a pas retenu notre attention. par la suite, M. Rousselle s'est rappelé d'un projet graphique réalisé quelques années auparavant par deux anciens étudiants, et ils avaient utilisé la bibliothèque CGAL. Cette dernière répondant à nos besoins, elle a été gardée pour le développement, tout en mettant de côté Assimp s'il s'avère que CGAL montre des limites. 
-		\newpage
 		
-	\section{Recherche et Développement}
-		\subsection{Structure d'un objet 3D}
-			Un objet 3D est défini via la bibliothèque CGAL comme un Polyhedron\_3 composé de faces, arêtes, sommets, et de relations entre ces composants. Chacune de ses arêtes est composé de deux demi-arêtes (halfedge), ayant chacun un sens opposé à l'autre. Les relations entre ces composants peut se définir de la manière comme représenté dans la Figure 1. \par 
-			Il est ainsi possible d'accéder à partir d'un composant à tous les autres composants adjacents. Par exemple, halfedge()-\textgreater facet() permet d'accéder dans cette figure à la face qui contient la demi-arête en rouge.
-			\begin{figure}
-				\centering
-				\includegraphics
-				{halfedge_small.png}
-				\caption{Structure d'un polyhedron}
-			\end{figure}
-		\subsection{Chargement d'un obj}
-			Le premier obstacle a été de gérer le chargement d'un fichier de format obj et de le transcrire comme un Polyhedron\_3. En effet, CGAL ne gère pas nativement cette option, ayant préféré le format .off. Cependant, un développeur nommé James Greggson a publié sur son blog (http://jamesgregson.blogspot.fr) en mai 2012 une version de loader obj et transcrit en Polyhedron\_3. J'ai donc repris son code et l'ait amélioré pour gérer en plus la subdivision en plusieurs Polyhedrons s'il s'avère qu'un fichier .obj contenait plusieurs objets en eux-même (la version initiale du développeur chargeait tous les objets d'un fichier obj en un seul Polyhedron\_3). 
-		
-		\subsection{Exporter un obj}
-			De la même manière, il m'a fallu récupérer le fichier obj une fois le traitement du Polyhedron terminé. Étrangement, là où CGAL n'a pas prévu un chargeur obj, il a prévu un enregistreur, avec la fonction print\_polyhedron\_wavefront(). Il suffit juste d'exporter les Polyhedron un par un dans un même fichier, et on récupère ainsi un fichier obj prêt à l'emploi (pour le consulter via un logiciel adapté, comme Blender).
-		
+	\chapter{Recherche et Développement}
+		\section{Comment vieillir des pierres ?}
+			L'idée générale du vieillissement est de réaliser de nombreux petits impacts sur la surface à vieillir, afin que le cumul de ces impacts donne une sensation d'usure sur l'objet 3D. Surface Aging by Impacts \cite{PPD01} explique en détail une théorie de l'idée. Dans le cadre de ce projet, les étapes de la réalisation d'un impact sont les suivantes : 
+			\begin{algorithm}[H]
+				\caption{Réaliser un impact}
+				\begin{algorithmic}[1]
+					\STATE Charger l'objet 3D sur lequel travailler
+					\REPEAT
+						\REPEAT
+							\STATE Chercher la/les face(s) sur laquelle/lesquelles le point d'impact aura lieu
+							\IF{le point est sur une face}
+								\STATE Affiner le maillage de la face qui sera impactée
+							\ELSIF{le point est sur une arête}
+								\STATE Affiner le maillage de l'arête et des faces adjacentes qui seront impactées
+							\ELSIF{le point est sur un sommet}
+								\STATE Affiner le maillage des arêtes et des faces adjacentes qui seront impactées
+							\ELSE
+								\STATE Arrêter le processus
+							\ENDIF
+						\UNTIL{surface de la face à impacter en dessous d'un certain seuil}
+						\STATE Réaliser l'impact
+					\UNTIL{impact souhaité obtenu}
+					\STATE Enregistrer l'objet 3D réalisé
+				\end{algorithmic}
+			\end{algorithm}
+			
+			
+		\section{Lire et écrire un objet 3D}
+			\subsection{Structure d'un objet 3D au format OBJ}
+				\subsubsection{Définition (Wikipédia)}
+				OBJ est un format de fichier contenant la description d'une géométrie 3D. Il a été défini par la société Wavefront Technologies dans le cadre du développement de son logiciel d'animation Advanced Visualizer. Ce format de fichier est ouvert et a été adopté par d'autres logiciels 3D pour des traitements d'import / export de données.
+				\subsubsection{Structure d'un obj}
+				Un objet 3D au format obj est un ensemble de sommets avec leurs coordonnées, et un ensemble de faces avec les sommets composants ces faces. Un sommet (ou vertice) se définit en commençant une ligne par la lettre v, et est suivi des coordonnées du point. Par exemple, les sommets d'un cube simple seraient : 
+				\begin{quotation}
+					v 1.000000 -1.000000 -1.000000 \par 
+					v 1.000000 -1.000000 1.000000 \par
+					v -1.000000 -1.000000 1.000000 \par
+					v -1.000000 -1.000000 -1.000000 \par
+					v 1.000000 1.000000 -1.000000 \par
+					v 1.000000 1.000000 1.000000 \par
+					v -1.000000 1.000000 1.000000 \par
+					v -1.000000 1.000000 -1.000000
+				\end{quotation} \par
+				Chaque sommet défini dans un fichier .obj est implicitement numéroté, en commençant à l'indice 1. \par
+				On peut aussi de manière facultative (mais conseillé) d'indiquer les coordonnées de texture (la ligne commence ainsi par vt) et les coordonnées des normales (la ligne commence ainsi par vn). \par
+				Ensuite, les faces (ou facets) sont définies en commençant chaque ligne par la lettre f, suivie d'une suite de numéros des sommets --- définis précédemment dans le fichier --- qui composent la face. Pour ce cube, avec des faces de type quadrilatère, elles seraient : 
+				\begin{quotation}
+					f 1 2 3 4 \par
+					f 5 8 7 6 \par
+					f 1 5 6 2 \par
+					f 2 6 7 3 \par
+					f 3 7 8 4 \par
+					f 5 1 4 8
+				\end{quotation} \par
+				Enfin, un fichier obj peut être composé de plusieurs objets. Chaque objet est ainsi délimité par un nom, avant la déclaration du premier sommet. Le nom peut commencer par la lettre o ou par la lettre g, selon si on veut définir un objet simple ou un groupe. Certains logiciels 3D choisiront d'utiliser malgré tout la lettre g pour définir un objet simple.
+				
+			\subsection{Structure d'un objet 3D sous CGAL}
+				Un objet 3D est défini via la bibliothèque CGAL comme un Polyhedron\_3 composé de faces, arêtes, sommets, et de relations entre ces composants. Chacune de ses arêtes est composé de deux demi-arêtes (halfedge), ayant chacun un sens opposé à l'autre. Les relations entre ces composants peut se définir de la manière comme représenté dans la Figure 1. \par
+				\begin{figure}[h]
+					\centering
+					\includegraphics{halfedge_small.png}
+					\caption{Structure d'un polyhedron}
+				\end{figure}
+				Il est ainsi possible d'accéder à partir d'un composant à tous les autres composants adjacents. Par exemple, halfedge()-\textgreater facet() permet d'accéder dans cette figure à la face qui contient la demi-arête en rouge.
+				
+			\subsection{Chargement d'un obj}
+				Le premier obstacle a été de gérer le chargement d'un fichier de format obj et de le transcrire comme un Polyhedron\_3. En effet, CGAL ne gère pas nativement cette option, ayant préféré le format .off. Cependant, un développeur nommé James Greggson a publié sur son blog (http://jamesgregson.blogspot.fr) en mai 2012 une version de loader obj et transcrit en Polyhedron\_3. J'ai donc repris son code et l'ait amélioré pour gérer en plus la subdivision en plusieurs Polyhedrons s'il s'avère qu'un fichier .obj contenait plusieurs objets en eux-même (la version initiale du développeur chargeait tous les objets d'un fichier obj en un seul Polyhedron\_3). \par 
+				De manière simple, CGAL peut incrémentalement créer un Polyhedron\_3, en déclarant un nouveau polyèdre par la fonction begin\_surface(nombre de sommets, nombre de faces). Ensuite, on ajoute chaque sommet avec la fonction add\_vertex(objet de type Point(x, y, z)). Enfin, on créé les faces du polyhedron. Pour chaque face à créer, on déclare la nouvelle face (avec begin\_facet()), on ajoute un à un les numéros de sommets dans l'ordre du fichier obj (avec add\_vertex\_to\_facet(num de la face)), puis on signale que la face à créer est terminée (avec end\_facet()), ce qui va relier le dernier sommet au premier. Il faut juste faire attention au fait que le format obj commence à l'indice 1, mais c++, comme de nombreux langages de développement, commence à l'indice 0.
+			
+			\subsection{Exporter un obj}
+				De la même manière, il m'a fallu récupérer le fichier obj une fois le traitement du Polyhedron terminé. Étrangement, là où CGAL n'a pas prévu de manière native un chargeur obj, il a prévu un enregistreur, avec la fonction print\_polyhedron\_wavefront(). Il suffit juste d'exporter les Polyhedron un par un dans un même fichier (via un ofstream), et on récupère ainsi un fichier obj prêt à l'emploi (par exemple pour le consulter via un logiciel adapté comme Blender).
+		\section{Mailler un Polyhedron\_3}
+			\subsection{Maillage initial}
+				Le maillage d'un Polyhedron est constitué de ses faces. Ainsi, si un objet de type cube est importé avec un maillage triangulaire, il sera constitué de 12 faces, avec 2 faces dans le même plan pour chaque véritable face du cube.
+			\subsection{Chercher la ou les faces du point d'impact}
+				Comme indiqué dans l'algorithme 1, selon où se trouve le point d'impact, il faut agir différemment. En effet, si le point est sur une arête, alors il faut modifier le maillage des faces adjacentes afin de réaliser un impact sans modifier drastiquement la structure de l'objet. CGAL fournit toutefois un itérateur de faces, nommé Facet\_iterator, qui parcourt toutes les faces de l'objet 3D. Les faces de la scène 3D du pont Notre Dame étant toutes des triangles, il est possible de reconstruire un triangle avec pour coordonnées les points de la face. A partir de là, on vérifie si le point d'impact est sur le triangle. Si oui, on l'ajoute à un vecteur de faces. Sinon, on l'ignore. On reprend le processus jusqu'à la dernière face. Si le point d'impact est sur une arête, alors les deux faces qui composent l'arête seront détectées et ajoutées dans le vecteur de faces. La même chose sera appliquée pour un sommet, avec 3 faces ou plus d'ajoutées.
 	\newpage
 \bibliographystyle{alpha}
 \bibliography{biblio}
