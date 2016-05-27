@@ -140,6 +140,52 @@
 				Le maillage d'un Polyhedron est constitué de ses faces. Ainsi, si un objet de type cube est importé avec un maillage triangulaire, il sera constitué de 12 faces, avec 2 faces dans le même plan pour chaque véritable face du cube.
 			\subsection{Chercher la ou les faces du point d'impact}
 				Comme indiqué dans l'algorithme 1, selon où se trouve le point d'impact, il faut agir différemment. En effet, si le point est sur une arête, alors il faut modifier le maillage des faces adjacentes afin de réaliser un impact sans modifier drastiquement la structure de l'objet. CGAL fournit toutefois un itérateur de faces, nommé Facet\_iterator, qui parcourt toutes les faces de l'objet 3D. Les faces de la scène 3D du pont Notre Dame étant toutes des triangles, il est possible de reconstruire un triangle avec pour coordonnées les points de la face. A partir de là, on vérifie si le point d'impact est sur le triangle. Si oui, on l'ajoute à un vecteur de faces. Sinon, on l'ignore. On reprend le processus jusqu'à la dernière face. Si le point d'impact est sur une arête, alors les deux faces qui composent l'arête seront détectées et ajoutées dans le vecteur de faces. La même chose sera appliquée pour un sommet, avec 3 faces ou plus d'ajoutées.
+			\subsection{Cas d'un point sur une face}
+				\subsubsection{Subdiviser la face}
+					De nombreuses recherches et tentatives ont été effectuées pour subdiviser une face. \par
+					Tout d'abord, j'ai commencé ma subdivision en effectuant une division barycentrique d'une face. Cette subdivision se fait en deux étapes. CGAL propose une fonction permettant de subdiviser une face du polyhedron, nommée create\_center\_vertex(pointeur d'halfedge de la face à subdiviser). Cette fonction relie tous les points de la face (Fig 2.1, halfedge de la face en rouge) vers un nouveau point créé de la face, qui sera placé au même endroit que le point pointé par l'halfedge initial, et retourne un Halfedge\_handle (un pointeur d'halfedge) partant de l'origine du halfedge passé en paramètre et pointant vers le nouveau point (Fig 2.2, l'halfedge retourné en bleu). A partir de là, on peut modifier la valeur du point du halfedge retourné en accédant au point (HalfedgeRetourné-\textgreater vertex()-\textgreater point()), et on le calcule en prenant la moyenne en x, y, et z, des trois points du triangle (Fig 2.3). Le problème majeur provient du fait que les triangles ainsi créés sont allongés par rapport au triangle original, et qu'à force de subdivision, les triangles seront de plus en plus allongés. Les impacts seront donc beaucoup trop étalés sur un côté, ce qui ne donnera pas un résultat sympathique. \par 
+					\begin{figure}[h]
+						\centering
+						\includegraphics[width=1\textwidth]{FigBarycentricMesh.png}
+						\caption{Subdiviser une face}
+					\end{figure}
+					\begin{figure}[h]
+						\centering
+						\includegraphics[width=0.5\textwidth]{impact1.png}
+						\caption{Impact sur une face d'un cube en 3 points}
+					\end{figure}
+					Ensuite je me suis tourné, avec l'avis de M. Rousselle, vers la triangulation de Delaunay, afin de pallier au problème des triangles allongés. Il est possible de réaliser cette triangulation via CGAL, mais pas avec un Polyhedron, mais avec un MeshDomain\_3. Toutefois, par manque de temps, je n'ai pas pu approfondir les recherches à ce niveau. CGAL peut certainement proposer un moyen de convertir de l'un vers l'autre et réciproquement, auquel cas ce travail serait possible. De nouvelles recherches à ce niveau seront effectuées dans le cadre de mon stage afin d'améliorer la subdivision autour d'un point. \par
+					J'ai toutefois trouvé un moyen de contourner le problème des triangles allongés. En effet, si chaque sous-triangle d'une face est elle-même divisée en 2, alors les triangles crées seront beaucoup moins allongés, car plus nombreux (6 au lieu de 3). CGAL prévoit aussi une fonction de division d'arêtes, nommée split\_edge(pointeur d'halfedge à subdiviser), qui fonctionne de la même manière que la fonction précédente. On créé avec la fonction le point qui sert de subdivision, puis on replace le point là où on le souhaite, dans mon cas, au milieu de l'arête. Le souci majeur de cette  fonction est que le point n'est pas relié aux points des facets qui le relient. Mais ce problème est vite réglé, car en faisant l'appel à split\_edge() puis à create\_center\_vertex(), le point central créé va se relier aux sommets du triangle, mais aussi aux points créés sur les arêtes de ce triangle. Ainsi, au lieu de subdiviser une face en 3 triangles, on la subdivise en six, réduisant l'étirement des triangles (Figure 3). 
+					\begin{figure}[h]
+						\centering
+						\includegraphics[width=0.3\textwidth]{FigBarycentricMeshSplit.png}
+						\caption{Subdiviser une face en six points}
+					\end{figure}
+					\begin{figure}[h]
+						\centering
+						\includegraphics[width=0.5\textwidth]{impact2.png}
+						\caption{Impact sur une face d'un cube en 6 points}
+					\end{figure}
+				\subsubsection{Supprimer les T-vertices}
+					La dernière méthode de subdivision présentée pose un très gros problème : la formation d'arêtes en T. Concrètement, dans le cas de la figure 3, on peut voir que les 3 points au centre des arêtes créés forment un T. De nombreux algorithmes de traitement de lumière, entre autres, n'arrivent pas à gérer correctement ces cas, générant des artefacts désagréables. Le but est donc de prolonger la subdivision aux points d'arêtes afin d'éviter ces T vertices. \par 
+					Une méthode simple appliquée dans mon cas a simplement été de rechercher les faces adjacentes, et de réaliser à leur tour une subdivision barycentrique sans subdiviser les arêtes qui ne le sont pas déjà. Ainsi, les arêtes subdivisées génèrent une arête de prolongation, et les autres ne généreront pas de T-vertices à leur tour. \par 
+					Je rappelle que la structure du Polyhedron\_3 proposé par CGAL identifie les arêtes non pas comme des edges, mais comme des halfedges. Ainsi, l'halfedge opposé à celui de la face en cours (halfedge-\textgreater opposite()) concerne la même arête, mais cette fois, concerne la face de l'autre côté de l'arête, qui est donc adjacente à la face en cours de traitement. Réappeler la méthode de subdivision de faces, sur la face adjacente donc, permet de subdiviser la face adjacente, et donc de prolonger le point créé sur l'arête lors de la subdivision initiale.
+				\subsubsection{Vérifier la taille de la face à impacter}
+					Il faut maintenant vérifier si on doit raffiner le maillage ou non. Pour cela, on cherche la nouvelle face qui contient le point d'impact, on calcule la distance entre un point de la face trouvée et le point d'impact. Si la distance est supérieure à un certain seuil, on recommence les deux premières étapes. Sinon, on passe à la dernière étape. Cette vérification est en fait un appel récursif des deux premières étapes.
+				\subsubsection{Impacter la face}
+					Cette étape est en réalité la plus simple. En effet, nous avons déjà récupéré la face concernée par l'impact. Il suffit juste donc de créer un point au milieu de cette face, puis de déplacer le point créé de telle sorte qu'il créé une sorte de creux dans la face. \par
+					En l'état, l'impact est créé "en dur", à savoir que je rentre moi même les coordonnées pour modifier l'objet. Toutefois, il est prévu par la suite, et conformément au papier de recherche Surface Aging by Impacts, de calculer la normale de la face qui sera impactée, et de déplacer le point créé dans le sens opposé à cette normale.
+					Néanmoins, l'impact reste relativement étiré même avec la division en six sous-triangles. La triangulation de Delaunay reste une solution optimale à ce problème, et devra donc être traité le plus rapidement possible.
+			\subsection{Cas d'un point sur une arête ou sur un sommet}
+				N'ayant pas pu réaliser cette tâche, ceci ne concernera que la partie théorique. \par 
+				L'idée est qu'en cas d'impact sur une arête, on puisse casser l'arête et créer un creux dans cette arête. Il faut donc :
+				\begin{enumerate}
+					\item Casser l'arête ciblée avec la fonction split\_edge()
+					\item Casser les deux arêtes ainsi créées à proximité du point d'impact
+					\item Utiliser la fonction create\_center\_vertex() sur les deux faces adjacentes et placer le point central à proximité du point d'impact (trouver un point à proximité est la raison pour laquelle cette section n'a pas été développée, car je n'ai pas encore trouvé de méthode optimale pour réaliser cette tâche)
+					\item déplacer le point d'impact afin de créer un petit creux qui ne déforme pas tout l'objet, d'où la présence des 4 autres points.
+				\end{enumerate}
+				De la même manière, pour un sommet, il suffit de réaliser les même tâches, sans la première, car on déplacera directement le point "sommet" au lieu d'en créer un autre.
 	\newpage
 \bibliographystyle{alpha}
 \bibliography{biblio}
