@@ -44,7 +44,7 @@
 		\section{Encadrants}
 			Je suis encadré pendant ce projet par M. Christophe Renaud, directeur du LISIC et responsable de l'équipe IMAP (Images et Apprentissage) du laboratoire de recherche, et par M. Rousselle, maître de conférences, enseignant-chercheur à l'IUT de Calais-Boulogne, et membre de l'équipe IMAP du laboratoire de recherche.
 		\section{L'état initial}
-			Le pont Notre Dame a déjà été intégralement modélisé sous 3DsMax par M. Rousselle, et m'a été fourni au format Wavefront obj à des fins de tests. 
+			Le pont Notre Dame a déjà été intégralement modélisé sous Unreal Engine par M. Rousselle, et m'a été fourni au format Wavefront obj à des fins de tests. 
 		\section{Durée du projet}
 			La période libre de projet s'étale du 18 avril au 05 juin 2016. Toutefois, comme mentionné par M. Fabien Teytaud, responsable du Master 1 Informatique ISIDIS, il est fort recommandé de commencer le projet dès le mois de janvier.
 		\section{Les outils mis en place}
@@ -67,8 +67,9 @@
 			Au cours de ces entretiens, il m'a aussi été demandé de rechercher des bibliothèques c++ afin d'éviter à devoir tout coder. En effet, la modélisation 3D est un domaine extrêmement en vogue à l'heure actuelle (que ce soit pour des simulations historiques, des modélisations de prototypes, des créations de jeux vidéos, ...), et de nombreuses personnes ont déjà travaillé dans ce domaine. Deux bibliothèques ont ainsi été trouvées par mes soins : les bibliothèques Assimp (http://www.assimp.org/) et Magnum (http://mosra.cz/blog/magnum.php), don la dernière n'a pas retenu notre attention. par la suite, M. Rousselle s'est rappelé d'un projet graphique réalisé quelques années auparavant par deux anciens étudiants, et ils avaient utilisé la bibliothèque CGAL. Cette dernière répondant à nos besoins, elle a été gardée pour le développement, tout en mettant de côté Assimp s'il s'avère que CGAL montre des limites. 
 		
 	\chapter{Recherche et Développement}
+		Evoquer papiers + photos pour illustrer le but recherché (photo réelle, synthèse, ...)
 		\section{Comment vieillir des pierres ?}
-			L'idée générale du vieillissement est de réaliser de nombreux petits impacts sur la surface à vieillir, afin que le cumul de ces impacts donne une sensation d'usure sur l'objet 3D. Surface Aging by Impacts \cite{PPD01} explique en détail une théorie de l'idée. Dans le cadre de ce projet, les étapes de la réalisation d'un impact sont les suivantes : 
+			L'idée générale du vieillissement dans ce projet est de réaliser de nombreux petits impacts sur la surface à vieillir, afin que le cumul de ces impacts donne une sensation d'usure sur l'objet 3D. Surface Aging by Impacts \cite{PPD01} explique en détail une théorie de l'idée. Dans le cadre de ce projet, les étapes de la réalisation d'un impact sont les suivantes : 
 			\begin{algorithm}[H]
 				\caption{Réaliser un impact}
 				\begin{algorithmic}[1]
@@ -92,11 +93,13 @@
 				\end{algorithmic}
 			\end{algorithm}
 			
-			
+		Annoncer plan par la suite par rapport à l'algo	
 		\section{Lire et écrire un objet 3D}
 			\subsection{Structure d'un objet 3D au format OBJ}
 				\subsubsection{Définition (Wikipédia)}
 				OBJ est un format de fichier contenant la description d'une géométrie 3D. Il a été défini par la société Wavefront Technologies dans le cadre du développement de son logiciel d'animation Advanced Visualizer. Ce format de fichier est ouvert et a été adopté par d'autres logiciels 3D pour des traitements d'import / export de données.
+				\subsubsection{Pourquoi le format Wavefront OBJ ?}
+				Le pont Notre Dame a été entièrement modélisé sous Unreal Engine, un moteur de jeu vidéo développé par la société Epic Games. Le format des objets créés étant propriétaires, je ne pouvais pas travailler directement dessus. Cependant, Unreal Engine propose un export des objets créés dans divers formats libres, dont le format OBJ, facile à comprendre et sur lequel il est aisé de travailler.
 				\subsubsection{Structure d'un obj}
 				Un objet 3D au format obj est un ensemble de sommets avec leurs coordonnées, et un ensemble de faces avec les sommets composants ces faces. Un sommet (ou vertice) se définit en commençant une ligne par la lettre v, et est suivi des coordonnées du point. Par exemple, les sommets d'un cube simple seraient : 
 				\begin{quotation}
@@ -127,7 +130,7 @@
 				\begin{figure}[h]
 					\centering
 					\includegraphics{halfedge_small.png}
-					\caption{Structure d'un Polyhedron\_3}
+					\caption{Structure d'un Polyhedron\_3 - Source : http://www.cgal.org}
 				\end{figure}
 				Il est ainsi possible d'accéder à partir d'un composant à tous les autres composants adjacents. Par exemple, halfedge()-\textgreater facet() permet d'accéder dans cette figure à la face qui contient la demi-arête en rouge.
 				
