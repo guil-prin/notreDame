@@ -8,6 +8,7 @@
 \titleformat{\chapter}[hang]{\Huge\bfseries}{\thechapter{ - }}{0pt}{\Huge\bfseries}
 \usepackage{babel}
 \setlength{\parindent}{20pt}
+\renewcommand{\thefigure}{\arabic{figure}}
 
 \begin{document}
 	\Large
@@ -48,9 +49,9 @@
 		\section{Durée du projet}
 			La période libre de projet s'étale du 18 avril au 05 juin 2016. Toutefois, comme mentionné par M. Fabien Teytaud, responsable du Master 1 Informatique ISIDIS, il est fort recommandé de commencer le projet dès le mois de janvier.
 		\section{Les outils mis en place}
-			Une boite de dépôt github a été créée pour l'occasion, à l'adresse suivante :  https://github.com/guil-prin/notreDame . Régulièrement mise à jour, vous pouvez y trouver l'évolution du développement (dossier "dev"), les documents produits pour le projet (dont ce rapport, dans le dossier "documentation"), et les sources finales (dossier "sources"). Les descriptions fonctionnelles du projet sont d'ailleurs dans le cahier des charges fourni le 25 avril. \par
+			Une boite de dépôt github \cite{GITH01} a été créée pour l'occasion. Régulièrement mise à jour, vous pouvez y trouver l'évolution du développement (dossier "dev"), les documents produits pour le projet (dont ce rapport, dans le dossier "documentation"), et les sources finales (dossier "sources"). Les descriptions fonctionnelles du projet sont d'ailleurs dans le cahier des charges fourni le 25 avril. \par
 			Un disque dur avec un système d'exploitation Debian vierge installé m'a été gracieusement prêté par Nathalie Ramat, responsable du parc informatique de l'ULCO, afin que je puisse bénéficier du statut d'administrateur sur mon pc, et que je puisse donc installer les outils nécessaires au développement du projet. \par
-			Une bibliothèque c++ a aussi été mise en place : CGAL. Disponible sur le site http://www.cgal.org/, elle permet de travailler sur une structure 3D avec des outils fournis pour définir un objet 3D et ses composants (arêtes, sommets, faces). La recherche de cette bibliothèque a été une partie du travail préliminaire au projet.
+			Une bibliothèque c++ a aussi été mise en place : CGAL. \cite{CGAL} Elle permet de travailler sur une structure 3D avec des outils fournis pour définir un objet 3D et ses composants (arêtes, sommets, faces). La recherche de cette bibliothèque a été une partie du travail préliminaire au projet.
 			
 	\chapter{Travaux préliminaires}
 		\section{Étude documentaire}
@@ -64,9 +65,11 @@
 			Une troisième note de recherche me sera fournie au début de la période de projet, Real-Time Relief Mapping on Arbitrary Polygonal Surfaces \cite{Policarpo:2005:RRM:1053427.1053453}. Bien que consultée, elle ne sera pas intéressante pour cette période de projet.
 			
 		\section{Recherche de bibliothèques}
-			Au cours de ces entretiens, il m'a aussi été demandé de rechercher des bibliothèques c++ afin d'éviter à devoir tout coder. En effet, la modélisation 3D est un domaine extrêmement en vogue à l'heure actuelle (que ce soit pour des simulations historiques, des modélisations de prototypes, des créations de jeux vidéos, ...), et de nombreuses personnes ont déjà travaillé dans ce domaine. Deux bibliothèques ont ainsi été trouvées par mes soins : les bibliothèques Assimp (http://www.assimp.org/) et Magnum (http://mosra.cz/blog/magnum.php), don la dernière n'a pas retenu notre attention. par la suite, M. Rousselle s'est rappelé d'un projet graphique réalisé quelques années auparavant par deux anciens étudiants, et ils avaient utilisé la bibliothèque CGAL. Cette dernière répondant à nos besoins, elle a été gardée pour le développement, tout en mettant de côté Assimp s'il s'avère que CGAL montre des limites. 
+			Au cours de ces entretiens, il m'a aussi été demandé de rechercher des bibliothèques c++ afin d'éviter à devoir tout coder. En effet, la modélisation 3D est un domaine extrêmement en vogue à l'heure actuelle (que ce soit pour des simulations historiques, des modélisations de prototypes, des créations de jeux vidéos, ...), et de nombreuses personnes ont déjà travaillé dans ce domaine. Deux bibliothèques ont ainsi été trouvées par mes soins : les bibliothèques Assimp \cite{ASMP} et Magnum \cite{MAGN}, don la dernière n'a pas retenu notre attention. par la suite, M. Rousselle s'est rappelé d'un projet graphique réalisé quelques années auparavant par deux anciens étudiants, et ils avaient utilisé la bibliothèque CGAL. Cette dernière répondant à nos besoins, elle a été gardée pour le développement, tout en mettant de côté Assimp s'il s'avère que CGAL montre des limites. 
 		
 	\chapter{Recherche et Développement}
+		\section{Définition du problème}
+			
 		Evoquer papiers + photos pour illustrer le but recherché (photo réelle, synthèse, ...)
 		\section{Comment vieillir des pierres ?}
 			L'idée générale du vieillissement dans ce projet est de réaliser de nombreux petits impacts sur la surface à vieillir, afin que le cumul de ces impacts donne une sensation d'usure sur l'objet 3D. Surface Aging by Impacts \cite{PPD01} explique en détail une théorie de l'idée. Dans le cadre de ce projet, les étapes de la réalisation d'un impact sont les suivantes : 
@@ -93,7 +96,7 @@
 				\end{algorithmic}
 			\end{algorithm}
 			
-		Annoncer plan par la suite par rapport à l'algo	
+		Je vais tout d'abord présenter ma méthode de lire et écrire un fichier obj par rapport au format fourni par CGAL, puis je vais présenter mes recherches et mes travaux sur l'affinage du maillage du modèle 3D, et enfin je vais présenter la réalisation de l'impact en lui-même.
 		\section{Lire et écrire un objet 3D}
 			\subsection{Structure d'un objet 3D au format OBJ}
 				\subsubsection{Définition (Wikipédia)}
@@ -130,12 +133,12 @@
 				\begin{figure}[h]
 					\centering
 					\includegraphics{halfedge_small.png}
-					\caption{Structure d'un Polyhedron\_3 - Source : http://www.cgal.org}
+					\caption{Structure d'un Polyhedron\_3 --- Crédits \cite{CGAL} }
 				\end{figure}
 				Il est ainsi possible d'accéder à partir d'un composant à tous les autres composants adjacents. Par exemple, halfedge()-\textgreater facet() permet d'accéder dans cette figure à la face qui contient la demi-arête en rouge.
 				
 			\subsection{Chargement d'un obj}
-				Le premier obstacle a été de gérer le chargement d'un fichier de format obj et de le transcrire comme un Polyhedron\_3. En effet, CGAL ne gère pas nativement cette option, ayant préféré le format .off. Cependant, un développeur nommé James Greggson a publié sur son blog (http://jamesgregson.blogspot.fr) en mai 2012 une version de loader obj et transcrit en Polyhedron\_3. J'ai donc repris son code et l'ait amélioré pour gérer en plus la subdivision en plusieurs Polyhedrons s'il s'avère qu'un fichier .obj contenait plusieurs objets en eux-même (la version initiale du développeur chargeait tous les objets d'un fichier obj en un seul Polyhedron\_3). \par 
+				Le premier obstacle a été de gérer le chargement d'un fichier de format obj et de le transcrire comme un Polyhedron\_3. En effet, CGAL ne gère pas nativement cette option, ayant préféré le format .off. Cependant, un développeur nommé James Greggson a publié sur son blog \cite{JGREG} en mai 2012 une version de loader obj et transcrit en Polyhedron\_3. J'ai donc repris son code et l'ait amélioré pour gérer en plus la subdivision en plusieurs Polyhedrons s'il s'avère qu'un fichier .obj contenait plusieurs objets en eux-même (la version initiale du développeur chargeait tous les objets d'un fichier obj en un seul Polyhedron\_3). \par 
 				De manière simple, CGAL peut incrémentalement créer un Polyhedron\_3, en déclarant un nouveau polyèdre par la fonction begin\_surface(nombre de sommets, nombre de faces). Ensuite, on ajoute chaque sommet avec la fonction add\_vertex(objet de type Point(x, y, z)). Enfin, on créé les faces du Polyhedron\_3. Pour chaque face à créer, on déclare la nouvelle face (avec begin\_facet()), on ajoute un à un les numéros de sommets dans l'ordre du fichier obj (avec add\_vertex\_to\_facet(num de la face)), puis on signale que la face à créer est terminée (avec end\_facet()), ce qui va relier le dernier sommet au premier. Il faut juste faire attention au fait que le format obj commence à l'indice 1, mais c++, comme de nombreux langages de développement, commence à l'indice 0.
 			
 			\subsection{Exporter un obj}
@@ -156,31 +159,41 @@
 					\end{figure}
 					\begin{figure}[h]
 						\centering
+						\includegraphics[width=0.5\textwidth]{tridividedcube.png}
+						\caption{Subdivision d'une face du cube visualisé sous Blender}
+					\end{figure}
+					\begin{figure}[h]
+						\centering
 						\includegraphics[width=0.5\textwidth]{impact1.png}
 						\caption{Impact sur une face d'un cube en 3 points}
 					\end{figure}
 					Ensuite je me suis tourné, avec l'avis de M. Rousselle, vers la triangulation de Delaunay, afin de pallier au problème des triangles allongés. Il est possible de réaliser cette triangulation via CGAL, mais pas avec un Polyhedron\_3, mais avec un MeshDomain\_3. Toutefois, par manque de temps, je n'ai pas pu approfondir les recherches à ce niveau. CGAL peut certainement proposer un moyen de convertir de l'un vers l'autre et réciproquement, auquel cas ce travail serait possible. De nouvelles recherches à ce niveau seront effectuées dans le cadre de mon stage afin d'améliorer la subdivision autour d'un point. \par
-					J'ai toutefois trouvé un moyen de contourner le problème des triangles allongés. En effet, si chaque sous-triangle d'une face est elle-même divisée en 2, alors les triangles crées seront beaucoup moins allongés, car plus nombreux (6 au lieu de 3). CGAL prévoit aussi une fonction de division d'arêtes, nommée split\_edge(pointeur d'halfedge à subdiviser), qui fonctionne de la même manière que la fonction précédente. On créé avec la fonction le point qui sert de subdivision, puis on replace le point là où on le souhaite, dans mon cas, au milieu de l'arête. Le souci majeur de cette fonction est que le point n'est pas relié aux points des faces qui le relient. Mais ce problème est vite réglé, car en faisant l'appel à split\_edge() puis à create\_center\_vertex(), le point central créé va se relier aux sommets du triangle, mais aussi aux points créés sur les arêtes de ce triangle. Ainsi, au lieu de subdiviser une face en 3 triangles, on la subdivise en six, réduisant l'étirement des triangles (Figure 4). 
+					J'ai toutefois trouvé un moyen de contourner le problème des triangles allongés. En effet, si chaque sous-triangle d'une face est elle-même divisée en 2, alors les triangles crées seront beaucoup moins allongés, car plus nombreux (6 au lieu de 3). CGAL prévoit aussi une fonction de division d'arêtes, nommée split\_edge(pointeur d'halfedge à subdiviser), qui fonctionne de la même manière que la fonction précédente. On créé le point qui sert de subdivision, puis on replace le point là où on le souhaite, dans mon cas, au milieu de l'arête. Le souci majeur de cette fonction est que le point n'est pas relié aux points des faces qui le relient. Mais ce problème est vite réglé, car en faisant l'appel à split\_edge() puis à create\_center\_vertex(), le point central créé va se relier aux sommets du triangle, mais aussi aux points créés sur les arêtes de ce triangle. Ainsi, au lieu de subdiviser une face en 3 triangles, on la subdivise en six, réduisant l'étirement des triangles (Figure 5). 
 					\begin{figure}[h]
 						\centering
 						\includegraphics[width=0.3\textwidth]{FigBarycentricMeshSplit.png}
 						\caption{Subdiviser une face en six points}
 					\end{figure}
-					\begin{figure}[h]
-						\centering
-						\includegraphics[width=0.5\textwidth]{impact2.png}
-						\caption{Impact sur une face d'un cube en 6 points}
-					\end{figure}
 				\subsubsection{Supprimer les T-vertices}
 					La dernière méthode de subdivision présentée pose un très gros problème : la formation d'arêtes en T. Concrètement, dans le cas de la figure 3, on peut voir que les 3 points au centre des arêtes créés forment un T. De nombreux algorithmes de traitement de lumière, entre autres, n'arrivent pas à gérer correctement ces cas, générant des artefacts désagréables. Le but est donc de prolonger la subdivision aux points d'arêtes afin d'éviter ces T vertices. \par 
 					Une méthode simple appliquée dans mon cas a simplement été de rechercher les faces adjacentes, et de réaliser à leur tour une subdivision barycentrique sans subdiviser les arêtes qui ne le sont pas déjà. Ainsi, les arêtes subdivisées génèrent une arête de prolongation, et les autres ne généreront pas de T-vertices à leur tour. \par 
-					Je rappelle que la structure du Polyhedron\_3 proposé par CGAL identifie les arêtes non pas comme des edges, mais comme des halfedges. Ainsi, l'halfedge opposé à celui de la face en cours (halfedge-\textgreater opposite()) concerne la même arête, mais cette fois, concerne la face de l'autre côté de l'arête, qui est donc adjacente à la face en cours de traitement. Rappeler la méthode de subdivision de faces, sur la face adjacente donc, permet de subdiviser la face adjacente, et donc de prolonger le point créé sur l'arête lors de la subdivision initiale.
+					Je rappelle que la structure du Polyhedron\_3 proposé par CGAL identifie les arêtes non pas comme des edges, mais comme des halfedges. Ainsi, l'halfedge opposé à celui de la face en cours (halfedge-\textgreater opposite()) concerne la même arête, mais cette fois, concerne la face de l'autre côté de l'arête, qui est donc adjacente à la face en cours de traitement. Rappeler la méthode de subdivision de faces, sur la face adjacente donc, permet de subdiviser la face adjacente, et donc de prolonger le point créé sur l'arête lors de la subdivision initiale (Figure 6).
+					\begin{figure}[h]
+						\centering
+						\includegraphics[width=0.5\textwidth]{subdividednotvertice.png}
+						\caption{Pas de T vertices sur la face}
+					\end{figure}
 				\subsubsection{Vérifier la taille de la face à impacter}
 					Il faut maintenant vérifier si on doit raffiner le maillage ou non. Pour cela, on cherche la nouvelle face qui contient le point d'impact, on calcule la distance entre un point de la face trouvée et le point d'impact. Si la distance est supérieure à un certain seuil, on recommence les deux premières étapes. Sinon, on passe à la dernière étape. Cette vérification est en fait un appel récursif des deux premières étapes.
 				\subsubsection{Impacter la face}
 					Cette étape est en réalité la plus simple. En effet, nous avons déjà récupéré la face concernée par l'impact. Il suffit juste donc de créer un point au milieu de cette face, puis de déplacer le point créé de telle sorte qu'il créé une sorte de creux dans la face. \par
 					En l'état, l'impact est créé "en dur", à savoir que je rentre moi même les coordonnées pour modifier l'objet. Toutefois, il est prévu par la suite, et conformément au papier de recherche Surface Aging by Impacts, de calculer la normale de la face qui sera impactée, et de déplacer le point créé dans le sens opposé à cette normale.
-					Néanmoins, l'impact reste relativement étiré même avec la division en six sous-triangles. La triangulation de Delaunay reste une solution optimale à ce problème, et devra donc être traité le plus rapidement possible.
+					Néanmoins, l'impact reste relativement étiré même avec la division en six sous-triangles (Figure 7). La triangulation de Delaunay reste une solution optimale à ce problème, et devra donc être traité le plus rapidement possible.
+					\begin{figure}[h]
+						\centering
+						\includegraphics[width=0.5\textwidth]{impact2.png}
+						\caption{Impact sur une face d'un cube en 6 points}
+					\end{figure}
 			\subsection{Cas d'un point sur une arête ou sur un sommet}
 				N'ayant pas pu réaliser cette tâche, ceci ne concernera que la partie théorique. \par 
 				L'idée est qu'en cas d'impact sur une arête, on puisse casser l'arête et créer un creux dans cette arête. Il faut donc :
@@ -195,7 +208,7 @@
 		Par la suite, il est prévu de travailler sur les tâches suivantes : 
 		\begin{itemize}
 			\item Réaliser un impact sur une arête, puis sur un sommet, avec la méthode explicitée dans la section précédente.
-			\item Permettre de réaliser un impact à partir d'un vecteur de frappe. Le point d'impact devra donc être calculé par l'intersection du vecteur généré et du polyèdre. 
+			\item Permettre de réaliser un impact à partir d'un vecteur de frappe. Le point d'impact devra donc être calculé par l'intersection du vecteur généré et du polyèdre. L'avantage de cette méthode est qu'elle me permettra de ne pas avoir à donner un point d'impact précisément sur le polyèdre.
 			\item Améliorer le sous-maillage, non plus via une triangulation barycentrique, mais via la triangulation de Delaunay, afin de réduire l'étirement des triangles générés.
 		\end{itemize}
 		
