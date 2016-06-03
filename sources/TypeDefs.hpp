@@ -1,0 +1,12 @@
+typedef CGAL::Exact_predicates_inexact_constructions_kernel     Kernel;
+//typedef CGAL::Simple_cartesian<double>     Kernel;
+typedef CGAL::Polyhedron_3<Kernel>         Polyhedron;
+typedef Polyhedron::HalfedgeDS             HalfedgeDS;
+typedef Polyhedron::Vertex_iterator Vertex_iterator;
+typedef Kernel::Point_3 Point_3;
+typedef Polyhedron::Facet_iterator Facet_iterator;
+typedef Polyhedron::Facet Facet;
+typedef Polyhedron::Facet_handle Facet_handle;
+typedef Polyhedron::Halfedge_handle Halfedge_handle;
+typedef Polyhedron::Halfedge_iterator Halfedge_iterator;
+typedef Kernel::Plane_3 Plane_3;
