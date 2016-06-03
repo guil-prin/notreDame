@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 	std::vector<Facet> fs;
 	std::vector<int> indexes;
 	Point_3 p(1.0, 0.5, 0.8);
-	std::cout << o.getFacetsFromPoint(p, fs, indexes) << std::endl;
+	o.getFacetsFromPoint(p, fs, indexes);
 	
 	if(fs.size() == 1) { // On a facet
 		o.refineFacetMesh(p, fs[0], 0.1, indexes[0]);

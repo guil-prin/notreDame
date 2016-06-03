@@ -221,7 +221,7 @@ int DegradeAnObject::getFacetFromPoint(Point_3 p, Facet &fs, int index) {
 void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int index) {
 	Facet chkF;
 	Halfedge_handle h = splitFacet(fs, index);
-	std::cout << getFacetFromPoint(p, chkF, index) << std::endl;
+	//std::cout << getFacetFromPoint(p, chkF, index) << std::endl;
 	if(getFacetFromPoint(p, chkF, index)) {
 		if(distanceBetweenPointAndFacet(p, chkF.halfedge()->vertex()->point()) > epsilon) {
 			refineFacetMesh(p, chkF, epsilon, index);
