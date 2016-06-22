@@ -1,7 +1,7 @@
 #!/bin/bash
 
 cgal_create_CMakeLists -s executable 
-cmake -DCGAL_DIR=$HOME/CGAL-4.8 . 
+cmake -DCGAL_DIR=$HOME/CGAL-4.8.1
 make
 
 if [ $# -eq 2 ]
