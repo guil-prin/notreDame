@@ -3,6 +3,11 @@
 #include "TypeDefs.hpp"
 #include "DegradeAnObject.hpp"
 
+
+/**
+ * Methodes pour charger l'obj dans les structures de données
+ * 
+ */
 // A modifier creating a triangle with the incremental builder.
 template<class HDS>
 class polyhedron_builder : public CGAL::Modifier_base<HDS> {
@@ -56,17 +61,6 @@ DegradeAnObject::DegradeAnObject(char const *input, char const *output) {
 			polys.push_back(P);
 		}
 	}
-}
- 
-// reads the first integer from a string in the form
-// "334/455/234" by stripping forward slashes and
-// scanning the result
-int DegradeAnObject::get_first_integer( const char *v ){
-	 int ival;
-	 std::string s( v );
-	 std::replace( s.begin(), s.end(), '/', ' ' );
-	 sscanf( s.c_str(), "%d", &ival );
-	 return ival;
 }
  
 // barebones .OFF file reader, throws away texture coordinates, normals, etc.
@@ -140,15 +134,10 @@ std::vector<std::string> DegradeAnObject::split(const std::string &s, char delim
     return tokens;
 }
 
-// Récupère les polyhedrons gréés
-std::vector<Polyhedron>& DegradeAnObject::getPolyhedrons() {
-	return polys;
-}
-
-// Récupère les noms des fichiers
-std::vector<std::string> DegradeAnObject::getNames() {
-	return names;
-}
+/**
+ * Méthodes de raffinage de maillage
+ * 
+ */
 
 // Warning : only for triangle mesh. NO. QUAD. MESH.
 // Récupère les faces correspondantes au point d'impact et retourne leurs nombres.
@@ -158,8 +147,7 @@ int DegradeAnObject::getFacetsFromPoint(Point_3 p, std::vector<Facet> &fs, std::
 			Point_3 p1 = fi->halfedge()->vertex()->point();
 			Point_3 p2 = fi->halfedge()->next()->vertex()->point();
 			Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
-			Kernel::Triangle_3 t3(p1, p2, p3);
-			if(t3.has_on(p)) {
+			if(isAPointInATriangle(p, p1, p2, p3)) {
 				index.push_back(i);
 				fs.push_back(*fi);
 			}
@@ -174,8 +162,7 @@ int DegradeAnObject::getFacetFromPoint(Point_3 p, Facet &fs, int index) {
 		Point_3 p1 = fi->halfedge()->vertex()->point();
 		Point_3 p2 = fi->halfedge()->next()->vertex()->point();
 		Point_3 p3 = fi->halfedge()->next()->next()->vertex()->point();
-		Kernel::Triangle_3 t3(p1, p2, p3);
-		if(t3.has_on(p)) {
+		if(isAPointInATriangle(p, p1, p2, p3)) { 
 			fs = *fi;
 			return 1;
 		}
@@ -183,59 +170,54 @@ int DegradeAnObject::getFacetFromPoint(Point_3 p, Facet &fs, int index) {
 	return 0;
 }
 
-// Réalise le travail de raffinage sur une FACE (getFacetsFromPoint == 1)
-void DegradeAnObject::refineFacetMesh(Point_3 p, Facet &fs, double epsilon, int index) {
-	Facet chkF;
-	double maxDistance = distanceBetweenPointAndFacet(p, fs);
-	if(maxDistance > epsilon) {
-		Halfedge_handle h = splitFacet(fs, index);
-		if(getFacetFromPoint(p, chkF, index)) {
-			maxDistance = distanceBetweenPointAndFacet(p, chkF);
-			if(maxDistance > epsilon) {
-				refineFacetMesh(p, chkF, epsilon, index);
-			}
-			/*else {
-				impactAFace(chkF, index, epsilon);
-			}
+// Place un point p sur la face fs, et relie p aux sommets de fs.
+Halfedge_handle DegradeAnObject::putAPointOnAFacet(Point_3 p, int index) {
+	Facet fs;
+	getFacetFromPoint(p, fs, index);
+	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
+	h->vertex()->point() = p;
+	return h;
+}
+
+// Place un point p sur la face fs, et relie p aux sommets de fs.
+bool DegradeAnObject::isAPointOnThisFacet(Point_3 p, Facet fs, int index) {
+	std::vector<Point_3> pts = getAllPointsFromFacet(fs);
+	if(isAPointInATriangle(p, pts[0], pts[1], pts[2])) {
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
+bool DegradeAnObject::sameSide(Point_3 p1, Point_3 p2, Point_3 a, Point_3 b) {
+    Vector_3 cp1 = CGAL::cross_product(b-a, p1-a);
+    Vector_3 cp2 = CGAL::cross_product(b-a, p2-a);
+    if(cp1*cp2 >= 0) {
+		return true;
+	}
+    else {
+		return false;
+	}
+}
+
+bool DegradeAnObject::isAPointInATriangle(Point_3 p, Point_3 a, Point_3 b, Point_3 c) {
+	Plane_3 pl(a, b, c);
+	if(pl.has_on(p)) {
+		if(sameSide(p, a, b, c) && sameSide(p, b, a, c) && sameSide(p, c, a, b)) {
+			return true;
 		}
 		else {
-			impactAFace(fs, index, epsilon);
+			return false;
 		}
 	}
 	else {
-		impactAFace(fs, index, epsilon);
-	}*/
-		}
+		return false;
 	}
 }
 
-// Subdivise la face (Quaternary subdivision)
-Halfedge_handle DegradeAnObject::splitFacet(Facet &fs, int index) {
-	Halfedge_handle hh1 = fs.halfedge();
-	Halfedge_handle hh2 = fs.halfedge()->next();
-	Halfedge_handle hh3 = fs.halfedge()->next()->next();
-	std::vector<Halfedge_handle> hhs = splitEdgesOfFacet(fs, index);
-	Halfedge_handle h = polys[index].split_facet(hhs[0], hhs[1]);
-	h = polys[index].split_facet(h, hhs[2]);
-	h = polys[index].split_facet(h, hhs[0]);
-	noTVertice(hh1, hh2, hh3, index);
-	return h;
-}
-
-// Subdivise la face (Barycentric subdivision)
-Halfedge_handle DegradeAnObject::barycentricMesh(Facet fs, int index) {
-	std::vector<Point_3> points;
-	Halfedge_handle hh = fs.halfedge();
-	Point_3 p1 = hh->vertex()->point();
-	points.push_back(p1);
-	hh = hh->next();
-	while(hh->vertex()->point() != p1) {
-		points.push_back(hh->vertex()->point());
-		hh = hh->next();
-	}
-	Halfedge_handle h = polys[index].create_center_vertex(fs.halfedge());
-	h->vertex()->point() = meanPoints(points);
-	return h;
+bool DegradeAnObject::twoPointsOnTheFacet(Point_3 p1, Point_3 p2, Facet fs, int index) {
+	return (isAPointOnThisFacet(p1, fs, index) && isAPointOnThisFacet(p2, fs, index));
 }
 
 // Annule les T Vertices sur les faces adjacentes
@@ -266,6 +248,12 @@ std::vector<Halfedge_handle> DegradeAnObject::splitEdgesOfFacet(Facet fs, int in
 	return hhs;
 }
 
+Halfedge_handle DegradeAnObject::splitEdge(Halfedge_handle hh, Point_3 p, int index) {
+	Halfedge_handle rh = polys[index].split_edge(hh);
+	rh->vertex()->point() = p;
+	return rh;
+}
+
 // Calcule une moyenne de deux points
 Point_3 DegradeAnObject::meanPoints(Point_3 p1, Point_3 p2) {
 	Point_3 pt(p2.x() + p1.x(), p2.y() + p1.y(), p2.z() + p1.z());
@@ -290,7 +278,7 @@ double DegradeAnObject::distanceBetweenPointAndFacet(Point_3 p, Facet f) {
 	double distance;
 	std::vector<Point_3> pts = getAllPointsFromFacet(f);
 	for(int i = 0 ; i < pts.size() ; i++) {
-		distance = CGAL::squared_distance(p, pts[i]);
+		distance = squared_distance(p, pts[i]);
 		if(maxDistance < distance) {
 			maxDistance = distance;
 		}
@@ -298,12 +286,9 @@ double DegradeAnObject::distanceBetweenPointAndFacet(Point_3 p, Facet f) {
 	return sqrt(maxDistance);
 }
 
-// Réalise l'impact d'une face
-void DegradeAnObject::impactAFace(Facet &fs, int index, double epsilon) {
-	Vector_3 normal = getNormalOfFacet(fs);
-	Halfedge_handle h = barycentricMesh(fs, index);
-	Point_3 pt = h->vertex()->point();
-	h->vertex()->point() = Point_3(pt.x() - 10*normal.x(), pt.y() - 10*normal.y(), pt.z() - 10*normal.z());
+// Distance entre 2 points
+double DegradeAnObject::squared_distance(Point_3 p1, Point_3 p2) {
+	return to_double((p1.x() - p2.x()) * (p1.x() - p2.x()) + (p1.y() - p2.y()) * (p1.y() - p2.y()) + (p1.z() - p2.z()) * (p1.z() - p2.z()));
 }
 
 // Retourne le vecteur normal d'une face
@@ -314,56 +299,52 @@ Vector_3 DegradeAnObject::getNormalOfFacet(Facet fs) {
 
 // Normalise un vecteur
 Vector_3 DegradeAnObject::normalizeVector(Vector_3 v) {
-	double norm = sqrt(v.x() * v.x() + v.y() * v.y() + v.z() * v.z());
+	double norm = sqrt(to_double(v.x() * v.x() + v.y() * v.y() + v.z() * v.z()));
 	return v/norm;
 }
 
 // Génère des points autour du point d'impact prévu
-std::vector<Point_3> DegradeAnObject::generatePointsOnFacet(Point_3 p, double ray, Facet fs) {
+std::vector<Point_3> DegradeAnObject::generatePointsOnFacet(Point_3 p, double ray, Facet fs, int nbPts) {
 	std::vector<Point_3> pts;
-	pts.push_back(p);
 	Vector_3 normal = normalizeVector(getNormalOfFacet(fs));
 	Kernel::Plane_3 pl(fs.halfedge()->vertex()->point(), normal);
 	Vector_3 orth = (pl.base1()) * ray;
-	Point_3 chkPt = p + orth;
-	int i = 0;
+	Vector_3 smallOrth;
+	Point_3 chkPt;
+	chkPt = p + orth;
+	pts.push_back(chkPt);
 	Facet test;
-	double teta = 10;
-	double c = cos(teta);
-	double s = sin(teta);
-	Kernel::RT m00 = normal.x() * normal.x() * (1-c) + c;
-	Kernel::RT m01 = normal.x() * normal.y() * (1-c) - normal.z() * s;
-	Kernel::RT m02 = normal.x() * normal.z() * (1-c) + normal.y() * s;
-	Kernel::RT m10 = normal.x() * normal.y() * (1-c) + normal.z() * s;
-	Kernel::RT m11 = normal.y() * normal.y() * (1-c) + c;
-	Kernel::RT m12 = normal.z() * normal.y() * (1-c) - normal.x() * s;
-	Kernel::RT m20 = normal.x() * normal.z() * (1-c) - normal.y() * s;
-	Kernel::RT m21 = normal.z() * normal.y() * (1-c) + normal.x() * s;
-	Kernel::RT m22 = normal.z() * normal.z() * (1-c) + c;
-	CGAL::Aff_transformation_3<Kernel> rotate(m00, m01, m02, m10, m11, m12, m20, m21, m22);
-	while(i < 36) {
-		orth = rotate.transform(orth);
+	double teta = M_PI/(nbPts/2.0);
+	for(int i = 1 ; i < nbPts ; i++) {
+		orth = rotationVector(orth, normal, teta);
 		chkPt = p + orth;
-		//std::cout << chkPt << std::endl;
 		pts.push_back(chkPt);
-		i++;
 	}
 	return pts;
 }
 
-void DegradeAnObject::impactTheFacetArea(Point_3 p, Facet fs, double ray, int index) {
-	double distance = 0;
+// Réalise un impact sur la face fs à partir d'une liste de points à déplacer, répartis par couronne (pts[0] = première couronne intérieure, pts[0][0] = premier point de la première couronne)
+void DegradeAnObject::impactTheFacetArea(std::vector< std::vector<Point_3> > pts, Facet fs, double ray, int index) {
+	double str = 0.02;
 	Vector_3 normal = normalizeVector(getNormalOfFacet(fs));
 	Kernel::Plane_3 pl(fs.halfedge()->vertex()->point(), normal);
-	for(Point_iterator pi = polys[index].points_begin() ; pi != polys[index].points_end() ; ++pi) {
-		Point_3 chkPt = *pi;
-		if(pl.has_on(chkPt)) {
-			distance = sqrt(CGAL::squared_distance(p, chkPt));
-			if(distance < ray) {
-				*pi = Point_3(chkPt.x() - 0.1*normal.x(), chkPt.y() - 0.1*normal.y(), chkPt.z() - 0.1*normal.z());
+	for(int i = 0 ; i < pts.size() ; i++) {
+		for(int j = 0 ; j < pts[i].size() ; j++) {
+			bool chk = false;
+			Point_iterator pi = polys[index].points_begin();
+			while(!chk) {
+				++pi;
+				if(*pi == pts[i][j]) {
+					*pi = Point_3(pi->x() - (impactStrengh(str, i))*normal.x(), pi->y() - (impactStrengh(str, i))*normal.y(), pi->z() - (impactStrengh(str, i))*normal.z());
+					chk = true;
+				}
 			}
 		}
 	}
+}
+
+double DegradeAnObject::impactStrengh(double initStrengh, int i) {
+	return initStrengh+initStrengh*(i/(i+1.0));
 }
 
 // Récupère la liste de tous les points d'une face
@@ -379,6 +360,7 @@ std::vector<Point_3> DegradeAnObject::getAllPointsFromFacet(Facet f) {
 	return pts;
 }
 
+// Génère un nombre aléatoire entre min et max
 double DegradeAnObject::rangeRandomAlg2 (int min, int max) {
     int n = max - min + 1;
     int remainder = RAND_MAX % n;
@@ -390,20 +372,204 @@ double DegradeAnObject::rangeRandomAlg2 (int min, int max) {
     return min + x % n;
 }
 
-// Start the process
+// Génère le vecteur qui a subi une rotation d'angle teta
+Vector_3 DegradeAnObject::rotationVector(Vector_3 v, Vector_3 normal, double teta) {
+	double c = cos(teta);
+	double s = sin(teta);
+	Kernel::RT m00 = normal.x() * normal.x() * (1-c) + c;
+	Kernel::RT m01 = normal.x() * normal.y() * (1-c) - normal.z() * s;
+	Kernel::RT m02 = normal.x() * normal.z() * (1-c) + normal.y() * s;
+	Kernel::RT m10 = normal.x() * normal.y() * (1-c) + normal.z() * s;
+	Kernel::RT m11 = normal.y() * normal.y() * (1-c) + c;
+	Kernel::RT m12 = normal.z() * normal.y() * (1-c) - normal.x() * s;
+	Kernel::RT m20 = normal.x() * normal.z() * (1-c) - normal.y() * s;
+	Kernel::RT m21 = normal.z() * normal.y() * (1-c) + normal.x() * s;
+	Kernel::RT m22 = normal.z() * normal.z() * (1-c) + c;
+	CGAL::Aff_transformation_3<Kernel> rotate(m00, m01, m02, m10, m11, m12, m20, m21, m22);
+	return rotate.transform(v);
+}
+
+// Dessine tous les points qui déterminent l'impact à réaliser, en plusieurs couronnes.
+void DegradeAnObject::drawImpactOnFacet(Point_3 p, double ray, std::vector<Point_3> pts, Facet initFs, int index, int nbCouronnes) {
+	std::vector< std::vector<Point_3> > points;
+	std::vector<Point_3> tmp;
+	std::vector<Halfedge_handle> hhs;
+	Halfedge_handle hh;
+	hh = putAPointOnAFacet(pts[0], index);
+	tmp.push_back(hh->vertex()->point());
+	for(int i = 1 ; i < pts.size() ; i++) {
+		hh = joinTwoPoints(pts[i], pts[i-1], index, tmp);
+	}
+	joinFirstAndLast(pts[0], pts[pts.size()-1], index, tmp);
+	for(int i = 1 ; i < nbCouronnes ; i++) {
+		hhs = getHalfedgesOfPoints(tmp, index);
+		tmp = drawInsideImpactOnFacet(tmp, hhs, initFs, index);
+		points.push_back(tmp);
+	}
+	impactTheFacetArea(points, initFs, ray, index);
+}
+
+// Dessine la couronne intérieure
+std::vector<Point_3> DegradeAnObject::drawInsideImpactOnFacet(std::vector<Point_3> points, std::vector<Halfedge_handle> hhs, Facet f, int index) {
+	std::vector<Point_3> pts;
+	for(int i = 0 ; i < points.size() ; i++) {
+		int j;
+		if(i == points.size()-1) {
+			j = 0;
+		}
+		else {
+			j = i+1;
+		}
+		Vector_3 h(hhs[i]->opposite()->vertex()->point(), hhs[i]->vertex()->point());
+		Vector_3 g(hhs[j]->opposite()->vertex()->point(), hhs[j]->vertex()->point());
+		Vector_3 norm = getNormalOfFacet(f);
+		Vector_3 rh = normalizeVector(rotationVector(h, norm, M_PI/2));
+		Vector_3 rg = normalizeVector(rotationVector(g, norm, M_PI/2));
+		Vector_3 comb = 0.01*normalizeVector(rh+rg);
+		Point_3 newPoint = hhs[i]->vertex()->point() + comb;
+		Halfedge_handle hh = polys[index].split_vertex(hhs[j]->opposite(), hhs[i]);
+		hh->vertex()->point() = newPoint;
+		polys[index].split_facet(hh->opposite()->next()->next(), hh->opposite());
+		polys[index].split_facet(hh->next()->next(), hh);
+		pts.push_back(newPoint);
+	}
+	return pts;
+}
+
+// Relie 2 points dans un polyèdre. p2 est le point PRECEDENT à p1.
+Halfedge_handle DegradeAnObject::joinTwoPoints(Point_3 p1, Point_3 p2, int index, std::vector<Point_3> & pts) {
+	Halfedge_handle hh;
+	std::vector<Facet> fcts;
+	std::vector<int> indexes;
+	Halfedge_handle prevHalf;
+	Facet fs;
+	getFacetFromPoint(p1, fs, index);
+	if(twoPointsOnTheFacet(p1, p2, fs, index)) {
+		prevHalf = putAPointOnAFacet(p1, index);
+		pts.push_back(prevHalf->vertex()->point());
+	}
+	else {
+		fcts.clear();
+		Segment_3 s(p1, p2);
+		getFacetsFromPoint(p2, fcts, indexes);
+		hh = getExteriorHalfedge(p2, s, fcts);
+		Halfedge_handle previousHalfedge = hh->next();
+		Halfedge_handle newEdge = addAndJoinNewPoint(p2, previousHalfedge, hh, s, index);
+		pts.push_back(newEdge->vertex()->point());
+		prevHalf = joinTwoPoints(p1, newEdge->vertex()->point(), index, pts);
+	}
+	
+	return prevHalf;
+}
+
+// Relie le premier et le dernier point
+Halfedge_handle DegradeAnObject::joinFirstAndLast(Point_3 p1, Point_3 p2, int index, std::vector<Point_3> & pts) {
+	Halfedge_handle hh;
+	bool chk = false;
+	std::vector<Facet> fcts;
+	std::vector<int> indexes;
+	Halfedge_handle prevHalf;
+	Facet fs;
+	getFacetsFromPoint(p1, fcts, indexes);
+	for(int i = 0 ; i < fcts.size() ; i++) {
+		if(twoPointsOnTheFacet(p1, p2, fcts[i], index)) {
+			chk = true;
+		}
+	}
+	if(!chk) {
+		fcts.clear();
+		Segment_3 s(p1, p2);
+		getFacetsFromPoint(p2, fcts, indexes);
+		hh = getExteriorHalfedge(p2, s, fcts);
+		Halfedge_handle previousHalfedge = hh->next();
+		Halfedge_handle newEdge = addAndJoinNewPoint(p2, previousHalfedge, hh, s, index);
+		pts.push_back(newEdge->vertex()->point());
+		prevHalf = joinFirstAndLast(p1, newEdge->vertex()->point(), index, pts);
+	}
+	
+	return prevHalf;
+}
+
+// Recherche les halfedges des - facets du point - qui ne contiennent pas le point
+Halfedge_handle DegradeAnObject::getExteriorHalfedge(Point_3 p, Segment_3 s, std::vector<Facet> fcts) {
+	Halfedge_handle retHh;
+	for(int i = 0 ; i < fcts.size() ; i++) {
+		Halfedge_handle hh = fcts[i].halfedge();
+		for(int j = 0 ; j < 3 ; j++) {
+			if(hh->vertex()->point() != p && hh->opposite()->vertex()->point() != p) {
+				Segment_3 seg(hh->opposite()->vertex()->point(), hh->vertex()->point());
+				if(!seg.is_degenerate()) {
+					if(CGAL::do_intersect(s, seg)) {
+						retHh = hh;
+					}
+				}
+			}
+			hh = hh->next();
+		}
+	}
+	return retHh;
+}
+
+Halfedge_handle DegradeAnObject::addAndJoinNewPoint(Point_3 p, Halfedge_handle previousHalfedge, Halfedge_handle hh, Segment_3 s, int index) {
+	Point_3 intersect;
+	Halfedge_handle splittedHalfedge;
+	Segment_3 seg(hh->opposite()->vertex()->point(), hh->vertex()->point());
+	Point_3* chkPt; 
+	CGAL::cpp11::result_of<Kernel::Intersect_3(Segment_3, Segment_3)>::type result = CGAL::intersection(s, seg);
+	if (result) {
+		chkPt = boost::get<Point_3 >(&*result);
+		intersect = *chkPt;
+	}
+	Halfedge_handle split = splitEdge(hh, intersect, index);
+	Halfedge_handle hhx = polys[index].split_facet(previousHalfedge, split);
+	Halfedge_handle oppositePoint = hhx->next()->opposite();
+	polys[index].split_facet(oppositePoint, oppositePoint->next()->next());
+	
+	return oppositePoint;
+}
+
+std::vector<Halfedge_handle> DegradeAnObject::getHalfedgesOfPoints(std::vector<Point_3> points, int index) {
+	std::vector<Halfedge_handle> hhs;
+	Halfedge_handle hh = getHalfedgeBetweenTwoPoints(points[0], points[points.size()-1], index);
+	hhs.push_back(hh);
+	for(int i = 1 ; i < points.size() ; i++) {
+		hhs.push_back(getHalfedgeBetweenTwoPoints(points[i], points[i-1], index));
+	}
+	return hhs;
+}
+
+Halfedge_handle DegradeAnObject::getHalfedgeBetweenTwoPoints(Point_3 p1, Point_3 p2, int index) {
+	bool found = false;
+	Halfedge_iterator hi = polys[index].halfedges_begin();
+	while(!found) {
+		if(p1 == hi->vertex()->point() && p2 == hi->opposite()->vertex()->point()) {
+			found = true;
+		}
+		else {
+			hi++;
+		}
+	}
+	return hi;
+}
+
+/**
+ * Public methods
+ * 
+ */
+
+// Starts the process
 void DegradeAnObject::startDeformation() {
 	std::vector<Facet> fs;
 	std::vector<int> indexes;
 	Point_3 p(1.0, 0.562, 0.818);
 	double ray = 0.1;
+	int nbCouronnes = 4;
+	int nbPoints = 10;
 	getFacetsFromPoint(p, fs, indexes);
-	
 	if(fs.size() == 1) { // On a facet
-		std::vector<Point_3> pts = generatePointsOnFacet(p, ray, fs[0]);
-		for(int i = 0 ; i < pts.size() ; i++) {
-			refineFacetMesh(pts[i], fs[0], 0.02, indexes[0]);
-		}
-		impactTheFacetArea(p, fs[0], ray, indexes[0]);
+		Facet f = fs[0];
+		std::vector<Point_3> pts = generatePointsOnFacet(p, ray, f, nbPoints);
+		drawImpactOnFacet(p, ray, pts, f, indexes[0], nbCouronnes);
 	}
 }
 
@@ -411,6 +577,7 @@ void DegradeAnObject::startDeformation() {
 void DegradeAnObject::exportObj() {
 	std::ofstream ofs(output);
 	for(int i = 0 ; i < polys.size() ; i++) {
+		ofs << "o " << names[i] << "\n";
 		CGAL::print_polyhedron_wavefront(ofs, polys[i]);
 	}
 	ofs.close();

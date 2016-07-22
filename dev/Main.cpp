@@ -13,18 +13,6 @@ int main(int argc, char** argv) {
 	DegradeAnObject o(input, output);
 
 	o.startDeformation();
-	/*else if(fs.size() == 2) {
-		for(int i = 0 ; i < polys.size() ; i++) {
-			Halfedge_handle hh;
-			for(Halfedge_iterator hi = polys[i].halfedge_begin() ; hi != polys[i].halfedge_begin_end() ; ++fi) {
-			}
-			Halfedge_handle hh = polys[i].split_edge(fi->halfedge());
-			hh->vertex()->point() = Point_3(1.0-0.2, 1.0-0.2, 0.5);
-		}
-	}*/
-	
-	//h->vertex()->point() = Point_3(h->vertex()->point().x(),h->vertex()->point().y()-1,h->vertex()->point().z());
-	
 	
 	o.exportObj();
 	
